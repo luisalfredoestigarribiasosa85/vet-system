@@ -4,5 +4,3 @@
 
 # Use login
 
-GET http://localhost:5000/api/pets
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzU5Mjg2MjgzLCJleHAiOjE3NTk4OTEwODN9.DBj6hULqJkcpW8PKcnijLbdXZqSHRPu43TDxCtSPClU
