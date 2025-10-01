@@ -18,6 +18,9 @@ router.get('/', protect, async (req, res) => {
     });
     res.json(pets);
   } catch (error) {
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeDatabaseError') {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: error.message });
   }
 });
@@ -38,6 +41,9 @@ router.get('/:id', protect, async (req, res) => {
     
     res.json(pet);
   } catch (error) {
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeDatabaseError') {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: error.message });
   }
 });
@@ -48,6 +54,9 @@ router.post('/', protect, async (req, res) => {
     const pet = await Pet.create(req.body);
     res.status(201).json(pet);
   } catch (error) {
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeDatabaseError') {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: error.message });
   }
 });
@@ -64,6 +73,9 @@ router.put('/:id', protect, async (req, res) => {
     await pet.update(req.body);
     res.json(pet);
   } catch (error) {
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeDatabaseError') {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: error.message });
   }
 });
@@ -80,6 +92,9 @@ router.delete('/:id', protect, async (req, res) => {
     await pet.update({ isActive: false });
     res.json({ message: 'Mascota eliminada correctamente' });
   } catch (error) {
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeDatabaseError') {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: error.message });
   }
 });

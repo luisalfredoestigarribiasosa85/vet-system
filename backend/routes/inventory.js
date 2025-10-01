@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const Inventory = require('../models/Inventory');
+const { Op, col, where } = require('sequelize');
 
 // GET inventario completo
 router.get('/', protect, async (req, res) => {
@@ -19,17 +20,16 @@ router.get('/', protect, async (req, res) => {
 // GET alertas de inventario
 router.get('/alerts', protect, async (req, res) => {
   try {
-    const { Op } = require('sequelize');
     const today = new Date();
     const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-    
+    const fmt = (d) => d.toISOString().slice(0, 10); // YYYY-MM-DD for DATEONLY
     // Productos con stock bajo
     const lowStock = await Inventory.findAll({
       where: {
         isActive: true,
-        quantity: {
-          [Op.lte]: sequelize.col('minStock')
-        }
+        [Op.and]: [
+          where(col('quantity'), '<=', col('minStock'))
+        ]
       }
     });
     
@@ -38,7 +38,7 @@ router.get('/alerts', protect, async (req, res) => {
       where: {
         isActive: true,
         expiryDate: {
-          [Op.between]: [today, thirtyDaysFromNow]
+          [Op.between]: [fmt(today), fmt(thirtyDaysFromNow)]
         }
       }
     });
