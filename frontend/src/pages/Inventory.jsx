@@ -5,12 +5,14 @@ import toast from 'react-hot-toast';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import { toInt, toFloat, confirmAction } from '../utils/helpers';
+import { Search } from 'lucide-react';
 
 const Inventory = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -117,11 +119,32 @@ const Inventory = () => {
         </Button>
       </div>
 
-      {items.length === 0 ? (
+      <div className="relative">
+        <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+        <input
+          type="text"
+          placeholder="Buscar por nombre, categoría o proveedor..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+
+      {(() => {
+        const q = searchTerm.toLowerCase().trim();
+        const filtered = !q
+          ? items
+          : items.filter((it) => {
+              const name = (it.name || '').toLowerCase();
+              const category = (it.category || '').toLowerCase();
+              const supplier = (it.supplier || '').toLowerCase();
+              return name.includes(q) || category.includes(q) || supplier.includes(q);
+            });
+        return filtered.length === 0 ? (
         <div className="bg-white rounded-xl shadow p-6 text-gray-600">
-          No hay inventario para mostrar aún.
+          No hay inventario para mostrar con el filtro actual.
         </div>
-      ) : (
+        ) : (
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <table className="min-w-full">
             <thead className="bg-gray-50">
@@ -135,7 +158,7 @@ const Inventory = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {items.map((it) => (
+              {filtered.map((it) => (
                 <tr key={it.id} className="hover:bg-gray-50">
                   <td className="px-4 py-2 text-sm text-gray-700">{it.name}</td>
                   <td className="px-4 py-2 text-sm text-gray-700">{it.category || '-'}</td>
@@ -153,7 +176,8 @@ const Inventory = () => {
             </tbody>
           </table>
         </div>
-      )}
+        );
+      })()}
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
