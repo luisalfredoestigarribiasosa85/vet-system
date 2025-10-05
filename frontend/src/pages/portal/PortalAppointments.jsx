@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarPlus, RefreshCw, Pencil, Trash2 } from 'lucide-react';
+import { CalendarPlus, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import api from '../api/axios';
-import Loader from '../components/common/Loader';
-import Button from '../components/common/Button';
-import Modal from '../components/common/Modal';
-import Input from '../components/common/Input';
+import portalApi from '../../api/portalApi';
+import Loader from '../../components/common/Loader';
+import Button from '../../components/common/Button';
+import Modal from '../../components/common/Modal';
+import Input from '../../components/common/Input';
+import usePortalAuth from '../../hooks/usePortalAuth';
 
 const DEFAULT_FORM = {
   petId: '',
@@ -14,16 +15,16 @@ const DEFAULT_FORM = {
   time: '',
   durationMinutes: 30,
   reason: '',
-  type: '',
   notes: '',
+  type: '',
 };
 
 const DURATION_OPTIONS = [15, 30, 45, 60];
 
-const Appointments = () => {
+const PortalAppointments = () => {
+  const { profile, refreshProfile } = usePortalAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [pets, setPets] = useState([]);
   const [veterinarians, setVeterinarians] = useState([]);
 
@@ -31,30 +32,30 @@ const Appointments = () => {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [availability, setAvailability] = useState([]);
-  const [availabilityMeta, setAvailabilityMeta] = useState(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    loadInitialData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadData();
   }, []);
 
   useEffect(() => {
-    if (!isModalOpen) {
-      return;
+    if (profile?.pets) {
+      setPets(profile.pets);
     }
+  }, [profile]);
 
+  useEffect(() => {
+    if (!isModalOpen) return;
     if (form.date && form.vetId) {
       fetchAvailability();
     } else {
       setAvailability([]);
-      setAvailabilityMeta(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.date, form.vetId, form.durationMinutes, isModalOpen]);
 
-  const loadInitialData = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
       await Promise.all([loadAppointments(), loadPets(), loadVeterinarians()]);
@@ -65,31 +66,28 @@ const Appointments = () => {
 
   const loadAppointments = async () => {
     try {
-      const res = await api.get('/appointments');
+      const res = await portalApi.get('/portal/appointments');
       setAppointments(res.data || []);
-    } catch (err) {
-      const msg = err?.response?.data?.message || 'Error al cargar citas';
-      toast.error(msg);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Error al cargar citas');
     }
   };
 
   const loadPets = async () => {
     try {
-      const res = await api.get('/pets');
+      const res = await portalApi.get('/portal/pets');
       setPets(res.data || []);
-    } catch (err) {
-      const msg = err?.response?.data?.message || 'Error al cargar mascotas';
-      toast.error(msg);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Error al cargar mascotas');
     }
   };
 
   const loadVeterinarians = async () => {
     try {
-      const res = await api.get('/appointments/veterinarians');
+      const res = await portalApi.get('/appointments/veterinarians');
       setVeterinarians(res.data || []);
-    } catch (err) {
-      const msg = err?.response?.data?.message || 'Error al cargar veterinarios';
-      toast.error(msg);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Error al cargar veterinarios');
     }
   };
 
@@ -97,7 +95,6 @@ const Appointments = () => {
     setEditing(null);
     setForm(DEFAULT_FORM);
     setAvailability([]);
-    setAvailabilityMeta(null);
     setModalOpen(true);
   };
 
@@ -110,11 +107,9 @@ const Appointments = () => {
       time: appointment.time?.slice(0, 5) || '',
       durationMinutes: appointment.durationMinutes || 30,
       reason: appointment.reason || '',
-      type: appointment.type || '',
       notes: appointment.notes || '',
+      type: appointment.type || '',
     });
-    setAvailability([]);
-    setAvailabilityMeta(null);
     setModalOpen(true);
   };
 
@@ -124,7 +119,6 @@ const Appointments = () => {
     setEditing(null);
     setForm(DEFAULT_FORM);
     setAvailability([]);
-    setAvailabilityMeta(null);
   };
 
   const handleFormChange = (field) => (event) => {
@@ -132,18 +126,16 @@ const Appointments = () => {
     setForm((prev) => ({
       ...prev,
       [field]: field === 'durationMinutes' ? Number(value) : value,
-      ...(field === 'vetId' || field === 'date' ? { time: '' } : {}),
+      ...(field === 'vetId' || field === 'date' ? { time: editing ? prev.time : '' } : {}),
     }));
   };
 
   const fetchAvailability = async () => {
-    if (!form.date || !form.vetId) {
-      return;
-    }
+    if (!form.date || !form.vetId) return;
 
     setAvailabilityLoading(true);
     try {
-      const res = await api.get('/appointments/availability', {
+      const res = await portalApi.get('/appointments/availability', {
         params: {
           vetId: form.vetId,
           date: form.date,
@@ -167,7 +159,6 @@ const Appointments = () => {
       }
 
       setAvailability(slots);
-      setAvailabilityMeta(res.data || null);
 
       if (!editing && slots.length) {
         const defaultSlot = slots.find((slot) => slot.available);
@@ -176,11 +167,9 @@ const Appointments = () => {
           time: defaultSlot ? defaultSlot.start : prev.time,
         }));
       }
-    } catch (err) {
-      const msg = err?.response?.data?.message || 'Error al consultar disponibilidad';
-      toast.error(msg);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'No se pudo cargar la disponibilidad');
       setAvailability([]);
-      setAvailabilityMeta(null);
     } finally {
       setAvailabilityLoading(false);
     }
@@ -213,22 +202,22 @@ const Appointments = () => {
       };
 
       if (editing) {
-        await api.put(`/appointments/${editing.id}`, payload);
-        toast.success('Cita actualizada');
+        await portalApi.put(`/portal/appointments/${editing.id}`, payload);
+        toast.success('Cita actualizada correctamente');
       } else {
-        await api.post('/appointments', payload);
-        toast.success('Cita creada');
+        await portalApi.post('/portal/appointments', payload);
+        toast.success('Cita solicitada correctamente');
       }
 
       closeModal();
-      await loadAppointments();
+      await Promise.all([loadAppointments(), refreshProfile()]);
     } catch (error) {
       const status = error?.response?.status;
-      const msg = error?.response?.data?.message || 'No se pudo guardar la cita';
+      const message = error?.response?.data?.message || 'No se pudo guardar la cita';
       if (status === 409) {
-        toast.error(msg);
+        toast.error(message);
       } else {
-        toast.error(msg);
+        toast.error(message);
       }
     } finally {
       setSubmitting(false);
@@ -240,9 +229,9 @@ const Appointments = () => {
     if (!confirmed) return;
 
     try {
-      await api.delete(`/appointments/${appointment.id}`);
+      await portalApi.delete(`/portal/appointments/${appointment.id}`);
       toast.success('Cita cancelada');
-      await loadAppointments();
+      await Promise.all([loadAppointments(), refreshProfile()]);
     } catch (error) {
       toast.error(error?.response?.data?.message || 'No se pudo cancelar la cita');
     }
@@ -250,70 +239,51 @@ const Appointments = () => {
 
   const availabilitySlots = useMemo(() => availability || [], [availability]);
 
-  if (loading) return <Loader fullScreen />;
+  if (loading) {
+    return <Loader fullScreen />;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Citas</h1>
-          <p className="text-sm text-gray-500">Gestiona la agenda diaria, verifica disponibilidad y crea nuevas citas.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            icon={RefreshCw}
-            onClick={async () => {
-              setRefreshing(true);
-              await loadAppointments();
-              setRefreshing(false);
-            }}
-            disabled={refreshing}
-          >
-            {refreshing ? 'Actualizando...' : 'Actualizar'}
-          </Button>
-          <Button icon={CalendarPlus} onClick={openCreateModal}>
-            Nueva cita
-          </Button>
-        </div>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-slate-800">Mis citas</h2>
+        <Button icon={CalendarPlus} onClick={openCreateModal}>
+          Nueva cita
+        </Button>
       </div>
 
       {appointments.length === 0 ? (
-        <div className="bg-white rounded-xl shadow p-6 text-gray-600">
-          No hay citas para mostrar aun.
+        <div className="bg-white rounded-2xl shadow p-6 text-slate-500">
+          Aun no tienes citas programadas.
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow overflow-hidden">
+        <div className="bg-white rounded-2xl shadow overflow-hidden">
           <table className="min-w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-slate-100">
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Fecha</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Inicio</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Fin</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Duracion</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Mascota</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Dueno</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Veterinario</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Estado</th>
-                <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Acciones</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Fecha</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Hora</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Mascota</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Veterinario</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-200">
               {appointments.map((appointment) => {
                 const canModify = appointment.status === 'programada';
                 return (
-                  <tr key={appointment.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.date}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.time?.slice(0, 5)}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.endTime?.slice(0, 5) || '-'}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.durationMinutes || 30} min</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.pet?.name || '-'}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.pet?.owner?.name || '-'}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.veterinarian?.name || '-'}</td>
-                    <td className="px-4 py-2 text-sm">
-                      <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 capitalize">{appointment.status || 'programada'}</span>
+                  <tr key={appointment.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 text-sm text-slate-700">{appointment.date}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">{appointment.time?.slice(0, 5)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">{appointment.pet?.name || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">{appointment.veterinarian?.name || '-'}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700 capitalize">
+                        {appointment.status || 'programada'}
+                      </span>
                     </td>
-                    <td className="px-4 py-2 text-sm text-right">
+                    <td className="px-4 py-3 text-sm text-right">
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="secondary"
@@ -343,15 +313,20 @@ const Appointments = () => {
         </div>
       )}
 
-      <Modal isOpen={isModalOpen} onClose={closeModal} title={editing ? 'Editar cita' : 'Programar nueva cita'} size="lg">
-        <form onSubmit={handleSubmit}>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title={editing ? 'Editar cita' : 'Solicitar nueva cita'}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mascota *</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1">Mascota *</label>
               <select
                 value={form.petId}
                 onChange={handleFormChange('petId')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Selecciona una mascota</option>
                 {pets.map((pet) => (
@@ -363,11 +338,11 @@ const Appointments = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Veterinario *</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1">Veterinario *</label>
               <select
                 value={form.vetId}
                 onChange={handleFormChange('vetId')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Selecciona un profesional</option>
                 {veterinarians.map((vet) => (
@@ -386,11 +361,11 @@ const Appointments = () => {
             />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duracion</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1">Duracion</label>
               <select
                 value={form.durationMinutes}
                 onChange={handleFormChange('durationMinutes')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {DURATION_OPTIONS.map((option) => (
                   <option key={option} value={option}>
@@ -415,16 +390,16 @@ const Appointments = () => {
             />
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Disponibilidad *</label>
-            <div className="border border-gray-200 rounded-lg p-3 min-h-[96px]">
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-2">Disponibilidad *</label>
+            <div className="border border-slate-200 rounded-lg p-3 min-h-[96px]">
               {availabilityLoading ? (
-                <div className="flex items-center justify-center py-6 text-sm text-gray-500">
+                <div className="flex items-center justify-center py-6 text-sm text-slate-500">
                   Cargando disponibilidad...
                 </div>
               ) : availabilitySlots.length === 0 ? (
-                <div className="py-6 text-sm text-gray-500">
-                  Selecciona veterinario, fecha y duracion para ver horarios disponibles.
+                <div className="py-6 text-sm text-slate-500">
+                  Selecciona veterinario, fecha y duracion para ver horarios.
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -440,8 +415,8 @@ const Appointments = () => {
                           slot.available
                             ? isSelected
                               ? 'border-blue-600 bg-blue-50 text-blue-700'
-                              : 'border-gray-300 text-gray-700 hover:border-blue-500'
-                            : 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed'
+                              : 'border-slate-300 text-slate-700 hover:border-blue-500'
+                            : 'border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed'
                         }`}
                       >
                         {slot.start} - {slot.end}
@@ -451,30 +426,25 @@ const Appointments = () => {
                 </div>
               )}
             </div>
-            {availabilityMeta?.appointments?.length ? (
-              <div className="mt-3 text-xs text-gray-500">
-                {availabilityMeta.appointments.length} citas ya programadas en la fecha seleccionada.
-              </div>
-            ) : null}
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1">Notas</label>
             <textarea
               value={form.notes}
               onChange={handleFormChange('notes')}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Indicaciones adicionales, sintomas reportados, etc"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Comentarios adicionales"
             />
           </div>
 
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="flex justify-end gap-3">
             <Button type="button" variant="secondary" onClick={closeModal} disabled={submitting}>
               Cerrar
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? 'Guardando...' : editing ? 'Actualizar cita' : 'Guardar cita'}
+              {submitting ? 'Guardando...' : editing ? 'Actualizar cita' : 'Confirmar cita'}
             </Button>
           </div>
         </form>
@@ -483,4 +453,4 @@ const Appointments = () => {
   );
 };
 
-export default Appointments;
+export default PortalAppointments;

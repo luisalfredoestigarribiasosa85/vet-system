@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
+const { protect } = require('../middleware/authMiddleware');
 const Pet = require('../models/Pet');
 const Client = require('../models/Client');
 
@@ -91,6 +91,37 @@ router.delete('/:id', protect, async (req, res) => {
     
     await pet.update({ isActive: false });
     res.json({ message: 'Mascota eliminada correctamente' });
+  } catch (error) {
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeDatabaseError') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST add reminder to pet
+router.post('/:id/reminders', protect, async (req, res) => {
+  try {
+    const pet = await Pet.findByPk(req.params.id);
+    if (!pet) {
+      return res.status(404).json({ message: 'Mascota no encontrada' });
+    }
+
+    const { type, date } = req.body;
+    if (!type || !date) {
+      return res.status(400).json({ message: 'El tipo y la fecha del recordatorio son obligatorios' });
+    }
+
+    const newReminder = { type, date };
+
+    // Sequelize doesn't automatically detect changes in JSONB arrays, so we need to manually update it.
+    const updatedReminders = [...(pet.reminders || []), newReminder];
+    pet.reminders = updatedReminders;
+    pet.changed('reminders', true); // Mark the field as dirty
+
+    await pet.save();
+
+    res.status(201).json(pet);
   } catch (error) {
     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeDatabaseError') {
       return res.status(400).json({ message: error.message });

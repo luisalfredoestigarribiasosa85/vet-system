@@ -1,6 +1,95 @@
+# Crear cita de ejemplo
+POST http://localhost:5000/api/appointments
+Content-Type: application/json
+Authorization: Bearer <token>
 
-# Login
+{
+  "petId": 1,
+  "vetId": 1,
+  "date": "2025-10-10",
+  "time": "15:00",
+  "durationMinutes": 30,
+  "reason": "Consulta de rutina"
+}
 
+### obtener token usando login
+POST http://localhost:5000/api/login
+Content-Type: application/json
 
-# Use login
+{
+  "username": "admin",
+  "password": "admin123"
+}
 
+### consultar disponibilidad de agenda
+GET http://localhost:5000/api/appointments/availability?vetId=1&date=2025-10-10&durationMinutes=30
+Authorization: Bearer <token>
+
+### listar veterinarios activos
+GET http://localhost:5000/api/appointments/veterinarians
+Authorization: Bearer <token>
+
+### crear historial medico
+POST http://localhost:5000/api/medical/records
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "petId": 1,
+  "vetId": 1,
+  "diagnosis": "Dermatitis alergica",
+  "treatment": "Antihistaminicos cada 12 horas por 7 dias",
+  "weight": 12.5,
+  "allergies": [{"name": "Pulgas", "severity": "moderada"}]
+}
+
+### obtener historial medico de una mascota
+GET http://localhost:5000/pets/1/records
+Authorization: Bearer <token>
+### registrar cliente portal
+POST http://localhost:5000/api/portal/register
+Content-Type: application/json
+
+{
+  "name": "Juan Perez",
+  "email": "juan@example.com",
+  "phone": "0981-111222",
+  "password": "cliente123"
+}
+
+### obtener perfil portal
+GET http://localhost:5000/api/portal/profile
+Authorization: Bearer <token_cliente>
+
+### listar citas portal
+GET http://localhost:5000/api/portal/appointments
+Authorization: Bearer <token_cliente>
+
+### crear cita portal
+POST http://localhost:5000/api/portal/appointments
+Content-Type: application/json
+Authorization: Bearer <token_cliente>
+
+{
+  "petId": 1,
+  "vetId": 1,
+  "date": "2025-10-15",
+  "time": "10:30",
+  "durationMinutes": 30,
+  "reason": "Control general"
+}
+### actualizar cita portal
+PUT http://localhost:5000/api/portal/appointments/1
+Content-Type: application/json
+Authorization: Bearer <token_cliente>
+
+{
+  "date": "2025-10-16",
+  "time": "11:30",
+  "durationMinutes": 30,
+  "reason": "Control actualizado"
+}
+
+### cancelar cita portal
+DELETE http://localhost:5000/api/portal/appointments/1
+Authorization: Bearer <token_cliente>

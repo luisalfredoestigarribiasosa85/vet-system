@@ -30,7 +30,7 @@ const User = sequelize.define('User', {
     }
   },
   role: {
-    type: DataTypes.ENUM('admin', 'veterinario', 'recepcionista'),
+    type: DataTypes.ENUM('admin', 'veterinario', 'recepcionista', 'cliente'),
     defaultValue: 'recepcionista'
   },
   isActive: {
@@ -42,7 +42,6 @@ const User = sequelize.define('User', {
   timestamps: true
 });
 
-// Hash password antes de guardar
 User.beforeCreate(async (user) => {
   if (user.password) {
     const salt = await bcrypt.genSalt(10);
@@ -57,9 +56,8 @@ User.beforeUpdate(async (user) => {
   }
 });
 
-// Método para comparar contraseñas
-User.prototype.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+User.prototype.comparePassword = async function comparePassword(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
 module.exports = User;

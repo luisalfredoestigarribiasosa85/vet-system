@@ -24,6 +24,12 @@ const Pets = () => {
     medicalHistory: '',
     allergies: ''
   });
+  const [newReminder, setNewReminder] = useState({ type: '', date: '' });
+
+  const handleReminderChange = (e) => {
+    const { name, value } = e.target;
+    setNewReminder(prev => ({ ...prev, [name]: value }));
+  };
 
   useEffect(() => {
     loadData();
@@ -123,6 +129,31 @@ const Pets = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddReminder = async () => {
+    if (!newReminder.type || !newReminder.date) {
+      return toast.error('El tipo y la fecha del recordatorio son obligatorios.');
+    }
+    if (!selectedPet) return;
+
+    try {
+      const response = await api.post(`/pets/${selectedPet.id}/reminders`, newReminder);
+      const updatedPet = response.data;
+
+      // Update the selectedPet state to instantly show the new reminder
+      setSelectedPet(updatedPet);
+
+      // Update the main pets list
+      setPets(prevPets => prevPets.map(p => p.id === updatedPet.id ? updatedPet : p));
+
+      // Clear the form
+      setNewReminder({ type: '', date: '' });
+      toast.success('Recordatorio añadido');
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Error al añadir recordatorio';
+      toast.error(msg);
+    }
   };
 
   const filteredPets = pets.filter(pet => matchSearch(pet, searchTerm, ['name', 'breed']));
@@ -249,6 +280,46 @@ const Pets = () => {
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-green-500 focus:border-green-500"
             ></textarea>
           </div>
+
+          {/* Reminders Section */}
+          {selectedPet && (
+            <div>
+              <h4 className="text-lg font-medium text-gray-800 mb-2">Recordatorios</h4>
+              <div className="space-y-2 mb-4">
+                {selectedPet.reminders && selectedPet.reminders.length > 0 ? (
+                  <ul className="list-disc list-inside bg-gray-50 p-3 rounded-md">
+                    {selectedPet.reminders.map((reminder, index) => (
+                      <li key={index} className="text-sm text-gray-700">
+                        {reminder.type} - {new Date(reminder.date).toLocaleDateString()}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500">No hay recordatorios programados.</p>
+                )}
+              </div>
+              {/* Add Reminder Form */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  name="type"
+                  placeholder="Tipo de recordatorio"
+                  value={newReminder.type}
+                  onChange={handleReminderChange}
+                  className="flex-grow border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-green-500 focus:border-green-500"
+                />
+                <input
+                  type="date"
+                  name="date"
+                  value={newReminder.date}
+                  onChange={handleReminderChange}
+                  className="border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-green-500 focus:border-green-500"
+                />
+                <Button type="button" variant="secondary" onClick={handleAddReminder}>Añadir</Button>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end space-x-3 pt-4">
             <Button type="button" variant="secondary" onClick={closeModal}>
               Cancelar

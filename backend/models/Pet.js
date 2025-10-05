@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const Client = require('./Client');
 
 const Pet = sequelize.define('Pet', {
   id: {
@@ -12,7 +11,7 @@ const Pet = sequelize.define('Pet', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Client,
+      model: 'clients',
       key: 'id'
     }
   },
@@ -57,6 +56,11 @@ const Pet = sequelize.define('Pet', {
     allowNull: true,
     defaultValue: []
   },
+  reminders: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    defaultValue: []
+  },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
@@ -65,9 +69,5 @@ const Pet = sequelize.define('Pet', {
   tableName: 'pets',
   timestamps: true
 });
-
-// Relación con Client
-Pet.belongsTo(Client, { foreignKey: 'clientId', as: 'owner' });
-Client.hasMany(Pet, { foreignKey: 'clientId', as: 'pets' });
 
 module.exports = Pet;

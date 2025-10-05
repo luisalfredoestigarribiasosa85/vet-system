@@ -7,7 +7,7 @@ const {
   updateClient,
   deleteClient
 } = require('../controllers/clientController');
-const { protect } = require('../middleware/auth');
+const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
   .get(protect, getClients)

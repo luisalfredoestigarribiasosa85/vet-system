@@ -1,98 +1,113 @@
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { Op } = require('sequelize');
+const { User, Client } = require('../models');
 
-// Generar JWT
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
-  });
-};
+const signToken = (user) => jwt.sign(
+  { id: user.id, role: user.role },
+  process.env.JWT_SECRET,
+  { expiresIn: '1h' }
+);
 
-// @desc    Registro de usuario
-// @route   POST /api/auth/register
-// @access  Private (solo admin)
-exports.register = async (req, res) => {
-  try {
-    const { username, password, name, email, role } = req.body;
+const sanitizeUser = (user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  clientId: user.client ? user.client.id : null,
+});
 
-    // Verificar si el usuario existe
-    const userExists = await User.findOne({ where: { username } });
-    if (userExists) {
-      return res.status(400).json({ message: 'El usuario ya existe' });
-    }
-
-    // Crear usuario
-    const user = await User.create({
-      username,
-      password,
-      name,
-      email,
-      role
-    });
-
-    res.status(201).json({
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user.id)
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Login de usuario
-// @route   POST /api/auth/login
-// @access  Public
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // Validar campos
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Por favor ingrese usuario y contraseña' });
-    }
+    const normalizedUsername = username?.trim().toLowerCase();
 
-    // Buscar usuario
-    const user = await User.findOne({ where: { username, isActive: true } });
+    const user = await User.findOne({
+      where: { username: normalizedUsername },
+      include: [{ model: Client, as: 'client', attributes: ['id'] }],
+    });
 
     if (!user) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
+      return res.status(401).json({ message: 'Credenciales invalidas' });
     }
 
-    // Verificar contraseña
-    const isMatch = await user.comparePassword(password);
-
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
+      return res.status(401).json({ message: 'Credenciales invalidas' });
+    }
+
+    const token = signToken(user);
+
+    res.json({
+      token,
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+};
+
+exports.register = async (req, res) => {
+  try {
+    const { name, username, email, password, role = 'recepcionista' } = req.body;
+
+    if (!name || !username || !email || !password) {
+      return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+    }
+
+    const normalizedUsername = username.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [{ username: normalizedUsername }, { email: normalizedEmail }],
+      },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'Usuario ya existe' });
+    }
+
+    const allowedRoles = ['admin', 'veterinario', 'recepcionista', 'cliente'];
+    const finalRole = allowedRoles.includes(role) ? role : 'recepcionista';
+
+    await User.create({
+      name: name.trim(),
+      username: normalizedUsername,
+      email: normalizedEmail,
+      password,
+      role: finalRole,
+    });
+
+    res.status(201).json({ message: 'Usuario creado exitosamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+};
+
+exports.me = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: ['id', 'name', 'email', 'role'],
+      include: [{ model: Client, as: 'client', attributes: ['id', 'name'] }],
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
     res.json({
       id: user.id,
-      username: user.username,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user.id)
+      client: user.client ? { id: user.client.id, name: user.client.name } : null,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Obtener usuario actual
-// @route   GET /api/auth/me
-// @access  Private
-exports.getMe = async (req, res) => {
-  try {
-    const user = await User.findByPk(req.user.id, {
-      attributes: { exclude: ['password'] }
-    });
-
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    res.status(500).json({ message: 'Error del servidor' });
   }
 };

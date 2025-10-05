@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     try {
       const response = await api.post('/auth/login', { username, password });
-      const { token, ...userData } = response.data;
+      const { token, user: userData } = response.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
@@ -37,11 +37,10 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        message: error?.response?.data?.message || 'Error al iniciar sesión',
+        message: error?.response?.data?.message || 'Error al iniciar sesion',
       };
     }
   };
-  
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

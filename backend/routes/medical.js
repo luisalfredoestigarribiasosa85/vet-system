@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
+const { protect } = require('../middleware/authMiddleware');
 const MedicalRecord = require('../models/MedicalRecord');
 const Pet = require('../models/Pet');
 const Client = require('../models/Client');

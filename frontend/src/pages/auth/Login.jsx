@@ -64,6 +64,7 @@ const Login = () => {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Cargando...' : 'Iniciar Sesión'}
             </Button>
+            <a href="/portal/login" className="text-sm text-blue-600 font-semibold">Iniciar Sesión como cliente</a>
           </form>
         </div>
       </div>

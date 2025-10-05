@@ -1,7 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const Pet = require('./Pet');
-const User = require('./User');
 
 const MedicalRecord = sequelize.define('MedicalRecord', {
   id: {
@@ -13,7 +11,7 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Pet,
+      model: 'pets',
       key: 'id'
     }
   },
@@ -21,14 +19,9 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: User,
+      model: 'users',
       key: 'id'
     }
-  },
-  date: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW
   },
   diagnosis: {
     type: DataTypes.TEXT,
@@ -38,29 +31,41 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  prescription: {
-    type: DataTypes.TEXT,
+  weight: {
+    type: DataTypes.FLOAT,
+    allowNull: true
+  },
+  temperature: {
+    type: DataTypes.FLOAT,
     allowNull: true
   },
   notes: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  weight: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true
+  vaccines: {
+    type: DataTypes.JSON,
+    defaultValue: [],
+    comment: 'Array de vacunas aplicadas: { name: string, date: Date, nextDose: Date }'
   },
-  temperature: {
-    type: DataTypes.DECIMAL(4, 1),
-    allowNull: true
+  allergies: {
+    type: DataTypes.JSON,
+    defaultValue: [],
+    comment: 'Array de alergias: { name: string, severity: "leve"|"moderada"|"grave" }'
+  },
+  surgeries: {
+    type: DataTypes.JSON,
+    defaultValue: [],
+    comment: 'Array de cirugias: { name: string, date: Date, notes: string }'
+  },
+  attachments: {
+    type: DataTypes.JSON,
+    defaultValue: [],
+    comment: 'Array de archivos adjuntos: { name: string, url: string, type: "image"|"pdf"|"other" }'
   }
 }, {
   tableName: 'medical_records',
   timestamps: true
 });
-
-// Relaciones
-MedicalRecord.belongsTo(Pet, { foreignKey: 'petId', as: 'pet' });
-MedicalRecord.belongsTo(User, { foreignKey: 'vetId', as: 'veterinarian' });
 
 module.exports = MedicalRecord;
