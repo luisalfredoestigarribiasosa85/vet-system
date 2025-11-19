@@ -93,3 +93,59 @@ Authorization: Bearer <token_cliente>
 ### cancelar cita portal
 DELETE http://localhost:5000/api/portal/appointments/1
 Authorization: Bearer <token_cliente>
+### listar planes portal
+GET http://localhost:5000/api/portal/plans
+Authorization: Bearer <token_cliente>
+
+### historial de pagos portal
+GET http://localhost:5000/api/portal/plans/history
+Authorization: Bearer <token_cliente>
+
+### iniciar pago plan (mock)
+POST http://localhost:5000/api/portal/plans/checkout
+Content-Type: application/json
+Authorization: Bearer <token_cliente>
+
+{
+  "planId": 1
+}
+
+### confirmar pago plan (mock)
+POST http://localhost:5000/api/portal/plans/checkout/1/confirm
+Content-Type: application/json
+Authorization: Bearer <token_cliente>
+
+{
+  "success": true,
+  "paymentReference": "MOCK-123"
+}
+
+### obtener planes (staff)
+GET http://localhost:5000/api/plans
+Authorization: Bearer <token_staff>
+
+### crear plan (staff)
+POST http://localhost:5000/api/plans
+Content-Type: application/json
+Authorization: Bearer <token_staff>
+
+{
+  "name": "Plan Preventivo",
+  "description": "Consulta + control anual",
+  "price": 250000,
+  "currency": "PYG"
+}
+
+### listar pagos de planes (staff)
+GET http://localhost:5000/api/payments/plans
+Authorization: Bearer <token_staff>
+
+### actualizar estado pago plan (staff)
+PATCH http://localhost:5000/api/payments/plans/1
+Content-Type: application/json
+Authorization: Bearer <token_staff>
+
+{
+  "status": "pagado",
+  "paymentReference": "MANUAL-001"
+}

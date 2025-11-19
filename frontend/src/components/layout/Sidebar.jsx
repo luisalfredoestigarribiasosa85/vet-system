@@ -27,6 +27,7 @@ const Sidebar = () => {
     { path: '/medical', icon: Stethoscope, label: 'Historial Médico' },
     { path: '/inventory', icon: Package, label: 'Inventario' },
     { path: '/invoices', icon: DollarSign, label: 'Facturación' },
+    { path: '/payments', icon: DollarSign, label: 'Pagos' },
   ];
 
   return (
@@ -64,7 +65,7 @@ const Sidebar = () => {
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
-              
+
               return (
                 <Link
                   key={item.path}

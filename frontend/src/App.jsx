@@ -7,6 +7,8 @@ import Appointments from './pages/Appointments';
 import Medical from './pages/Medical';
 import Inventory from './pages/Inventory';
 import Invoices from './pages/Invoices';
+import Payments from './pages/Payments';
+import Plans from './pages/Plans';
 import Login from './pages/auth/Login';
 import MedicalHistory from './pages/MedicalHistory';
 import PortalLogin from './pages/portal/PortalLogin';
@@ -17,6 +19,7 @@ import PortalDashboard from './pages/portal/PortalDashboard';
 import PortalAppointments from './pages/portal/PortalAppointments';
 import PortalPets from './pages/portal/PortalPets';
 import PortalPetDetails from './pages/portal/PortalPetDetails';
+import PortalPlans from './pages/portal/PortalPlans';
 
 function App() {
   return (
@@ -37,6 +40,7 @@ function App() {
           <Route index element={<PortalDashboard />} />
           <Route path="appointments" element={<PortalAppointments />} />
           <Route path="pets" element={<PortalPets />} />
+          <Route path="plans" element={<PortalPlans />} />
           <Route path="pets/:petId" element={<PortalPetDetails />} />
         </Route>
 
@@ -57,6 +61,8 @@ function App() {
           <Route path="medical" element={<Medical />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="invoices" element={<Invoices />} />
+          <Route path="plans" element={<Plans />} />
+          <Route path="payments" element={<Payments />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -66,3 +72,9 @@ function App() {
 }
 
 export default App;
+
+
+
+
+
+

@@ -10,15 +10,26 @@ const {
   createAppointment,
   updateAppointment,
   cancelAppointment,
+  getAvailablePlans,
+  getClientPlanHistory,
+  createPlanCheckout,
+  confirmPlanPayment,
 } = require('../controllers/portalController');
 
 router.post('/register', registerClient);
 router.get('/profile', protect, getProfile);
+
 router.get('/pets', protect, getPets);
 router.get('/pets/:petId/records', protect, getPetRecords);
+
 router.get('/appointments', protect, getAppointments);
 router.post('/appointments', protect, createAppointment);
 router.put('/appointments/:id', protect, updateAppointment);
 router.delete('/appointments/:id', protect, cancelAppointment);
+
+router.get('/plans', protect, getAvailablePlans);
+router.get('/plans/history', protect, getClientPlanHistory);
+router.post('/plans/checkout', protect, createPlanCheckout);
+router.post('/plans/checkout/:id/confirm', protect, confirmPlanPayment);
 
 module.exports = router;

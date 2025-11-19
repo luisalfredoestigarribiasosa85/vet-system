@@ -10,7 +10,7 @@ cd backend
 
 ### 2. Instalar dependencias
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. Configurar PostgreSQL
@@ -44,22 +44,42 @@ FRONTEND_URL=http://localhost:3000
 
 ### 5. Inicializar base de datos con datos de prueba
 ```bash
-npm run seed
+pnpm run seed
 ```
 
 ### 6. Iniciar servidor
 ```bash
 # Modo desarrollo (con auto-reload)
-npm run dev
+pnpm run dev
+## Testing
 
-# Modo producci??n
-npm start
+El sistema incluye tests unitarios e integración con Jest.
+
+```bash
+# Ejecutar todos los tests
+pnpm test
+
+# Modo watch
+pnpm run test:watch
+
+# Ver cobertura
+pnpm run test:coverage
 ```
 
-### Scripts utiles
-- `npm run backfill:appointments` - recalcula startDateTime, endDateTime y durationMinutes en citas existentes.
+**Ver guía completa**: [TESTING.md](./TESTING.md)
 
-El servidor estar?? disponible en: http://localhost:5000
+## Seguridad
+
+El sistema implementa múltiples capas de seguridad:
+
+- ✅ **Helmet.js**: Headers HTTP seguros
+- ✅ **Rate Limiting**: Protección contra ataques de fuerza bruta
+- ✅ **Joi Validation**: Validación robusta de inputs
+- ✅ **Sanitización**: Prevención de XSS y NoSQL injection
+- ✅ **CORS**: Control de orígenes permitidos
+- ✅ **Winston Logging**: Sistema de logs estructurado
+
+**Ver guía completa**: [SECURITY.md](./SECURITY.md)
 
 ## Endpoints de la API
 
@@ -193,15 +213,64 @@ curl -X POST http://localhost:5000/api/clients \
 - Implementar rate limiting
 - Validar todos los inputs
 
+## Testing
+
+### Ejecutar Tests
+
+```bash
+# Todos los tests
+pnpm test
+
+# Modo watch
+pnpm run test:watch
+
+# Ver cobertura
+pnpm run test:coverage
+```
+
+### Estructura de Tests
+
+- `tests/unit/models/` - Tests unitarios de modelos
+- `tests/integration/` - Tests de integración de endpoints
+
+Ver [TESTING.md](./TESTING.md) para guía completa.
+
+## Seguridad
+
+### Características Implementadas
+
+✅ **Rate Limiting** - Protección contra ataques de fuerza bruta
+✅ **Helmet.js** - Headers HTTP seguros
+✅ **Joi Validation** - Validación robusta de inputs
+✅ **Input Sanitization** - Prevención de XSS y NoSQL injection
+✅ **CORS** - Control de orígenes permitidos
+✅ **Winston Logging** - Sistema de logs estructurado
+
+### Rate Limits
+
+| Endpoint | Desarrollo | Producción |
+|----------|-----------|------------|
+| General | 1000/15min | 100/15min |
+| Auth | 50/15min | 5/15min |
+| API | 500/15min | 50/15min |
+
+### Logs
+
+Los logs se guardan en `logs/`:
+- `error-YYYY-MM-DD.log` - Solo errores
+- `combined-YYYY-MM-DD.log` - Todos los logs
+
+Ver [SECURITY.md](./SECURITY.md) para documentación completa.
+
 ## Funcionalidades Adicionales Recomendadas
 
-1. **Rate Limiting**: Limitar peticiones por IP
-2. **Logging**: Sistema de logs con Winston
-3. **Validaci??n**: Joi para validar datos de entrada
-4. **Documentaci??n**: Swagger/OpenAPI
-5. **Tests**: Jest para pruebas unitarias
-6. **Monitoreo**: PM2 para producci??n
-7. **Cach??**: Redis para mejorar performance
+1. ~~**Rate Limiting**~~ ✅ Implementado
+2. ~~**Logging**~~ ✅ Implementado con Winston
+3. ~~**Validación**~~ ✅ Implementado con Joi
+4. **Documentación**: Swagger/OpenAPI
+5. ~~**Tests**~~ ✅ Implementado con Jest
+6. **Monitoreo**: PM2 para producción
+7. **Caché**: Redis para mejorar performance
 
 ## Despliegue
 
@@ -230,4 +299,6 @@ COPY . .
 EXPOSE 5000
 CMD ["npm", "start"]
 ```
+
+
 

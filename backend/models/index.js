@@ -7,6 +7,9 @@ const Appointment = require('./Appointment');
 const MedicalRecord = require('./MedicalRecord');
 const Inventory = require('./Inventory');
 const Invoice = require('./Invoice');
+const Plan = require('./Plan');
+const PlanPurchase = require('./PlanPurchase');
+const Vaccination = require('./Vaccination');
 
 User.hasOne(Client, { foreignKey: 'userId', as: 'client' });
 Client.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -26,6 +29,18 @@ MedicalRecord.belongsTo(Pet, { foreignKey: 'petId', as: 'pet' });
 User.hasMany(MedicalRecord, { foreignKey: 'vetId', as: 'medicalRecords' });
 MedicalRecord.belongsTo(User, { foreignKey: 'vetId', as: 'veterinarian' });
 
+Plan.hasMany(PlanPurchase, { foreignKey: 'planId', as: 'purchases' });
+PlanPurchase.belongsTo(Plan, { foreignKey: 'planId', as: 'plan' });
+
+Client.hasMany(PlanPurchase, { foreignKey: 'clientId', as: 'planPurchases' });
+PlanPurchase.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
+
+Pet.hasMany(Vaccination, { foreignKey: 'petId', as: 'vaccinations' });
+Vaccination.belongsTo(Pet, { foreignKey: 'petId', as: 'pet' });
+
+User.hasMany(Vaccination, { foreignKey: 'vetId', as: 'vaccinations' });
+Vaccination.belongsTo(User, { foreignKey: 'vetId', as: 'veterinarian' });
+
 module.exports = {
   sequelize,
   User,
@@ -34,5 +49,8 @@ module.exports = {
   Appointment,
   MedicalRecord,
   Inventory,
-  Invoice
+  Invoice,
+  Plan,
+  PlanPurchase,
+  Vaccination,
 };

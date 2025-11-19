@@ -12,13 +12,27 @@ require('./models');
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Middleware básico
+app.use(cors()); // CORS simple por ahora
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Logging simple (hasta que instales Winston)
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url} - ${req.ip}`);
+  next();
+});
 
 // Archivos estaticos
 app.use('/uploads', express.static('uploads'));
+
+// Swagger Documentation
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'API Veterinaria - Documentación',
+}));
 
 // Rutas
 app.use('/api/auth', require('./routes/auth'));
@@ -28,7 +42,10 @@ app.use('/api/appointments', require('./routes/appointments'));
 app.use('/api/medical', require('./routes/medicalRoutes'));
 app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/invoices', require('./routes/invoices'));
+app.use('/api/plans', require('./routes/plans'));
+app.use('/api/payments', require('./routes/payments'));
 app.use('/api/portal', require('./routes/portal'));
+app.use('/api/vaccinations', require('./routes/vaccinations'));
 
 // Ruta de bienvenida
 app.get('/', (req, res) => {
@@ -42,7 +59,10 @@ app.get('/', (req, res) => {
       appointments: '/api/appointments',
       medical: '/api/medical',
       inventory: '/api/inventory',
-      invoices: '/api/invoices'
+      invoices: '/api/invoices',
+      plans: '/api/plans',
+      payments: '/api/payments',
+      portal: '/api/portal'
     }
   });
 });
@@ -56,14 +76,15 @@ const startServer = async () => {
   try {
     await testConnection();
     await sequelize.sync({ alter: true });
-    console.log('Base de datos sincronizada');
+    console.log('✅ Base de datos sincronizada');
 
     app.listen(PORT, () => {
-      console.log(`Servidor corriendo en puerto ${PORT}`);
-      console.log(`Modo: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`✅ Servidor corriendo en puerto ${PORT}`);
+      console.log(`📍 Modo: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`⚠️  NOTA: Instala las dependencias de seguridad para activar todas las protecciones`);
     });
   } catch (error) {
-    console.error('Error al iniciar el servidor:', error);
+    console.error('❌ Error al iniciar el servidor:', error);
     process.exit(1);
   }
 };

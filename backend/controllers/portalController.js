@@ -4,7 +4,15 @@ const { Op } = require('sequelize');
 const models = require('../models');
 const { computeSlot, ensureNoConflicts } = require('../utils/appointmentHelpers');
 
-const { User, Client, Pet, Appointment, MedicalRecord } = models;
+const {
+  User,
+  Client,
+  Pet,
+  Appointment,
+  MedicalRecord,
+  Plan,
+  PlanPurchase,
+} = models;
 
 const signToken = (user) => jwt.sign(
   { id: user.id, role: user.role },
@@ -21,6 +29,12 @@ const sanitizeUser = (user, client) => ({
 });
 
 const getClientForUser = async (userId) => Client.findOne({ where: { userId, isActive: true } });
+
+const calculateVatAmount = (amount, vatPercentage) => {
+  if (!vatPercentage) return 0;
+  const base = amount / (1 + vatPercentage / 100);
+  return Math.round(amount - base);
+};
 
 exports.registerClient = async (req, res) => {
   try {
@@ -300,6 +314,7 @@ exports.createAppointment = async (req, res) => {
     res.status(statusCode).json({ message: error.message || 'Error al crear cita' });
   }
 };
+
 exports.updateAppointment = async (req, res) => {
   try {
     if (req.user.role !== 'cliente') {
@@ -426,3 +441,132 @@ exports.cancelAppointment = async (req, res) => {
     res.status(500).json({ message: 'Error al cancelar la cita' });
   }
 };
+
+exports.getAvailablePlans = async (req, res) => {
+  try {
+    const plans = await Plan.findAll({
+      where: { isActive: true },
+      order: [['createdAt', 'ASC']],
+    });
+    res.json(plans);
+  } catch (error) {
+    console.error('Error fetching plans', error);
+    res.status(500).json({ message: 'Error al obtener planes' });
+  }
+};
+
+exports.getClientPlanHistory = async (req, res) => {
+  try {
+    if (req.user.role !== 'cliente') {
+      return res.status(403).json({ message: 'Acceso no autorizado' });
+    }
+
+    const client = await getClientForUser(req.user.id);
+    if (!client) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+
+    const purchases = await PlanPurchase.findAll({
+      where: { clientId: client.id },
+      include: [{ model: Plan, as: 'plan' }],
+      order: [['createdAt', 'DESC']],
+    });
+
+    res.json(purchases);
+  } catch (error) {
+    console.error('Error fetching plan history', error);
+    res.status(500).json({ message: 'Error al obtener historial de planes' });
+  }
+};
+
+exports.createPlanCheckout = async (req, res) => {
+  try {
+    if (req.user.role !== 'cliente') {
+      return res.status(403).json({ message: 'Acceso no autorizado' });
+    }
+
+    const client = await getClientForUser(req.user.id);
+    if (!client) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+
+    const { planId } = req.body;
+    const plan = await Plan.findOne({
+      where: { id: planId, isActive: true },
+    });
+
+    if (!plan) {
+      return res.status(404).json({ message: 'Plan no encontrado' });
+    }
+
+    const amount = plan.price;
+    const vatAmount = calculateVatAmount(amount, plan.vatPercentage);
+
+    const purchase = await PlanPurchase.create({
+      clientId: client.id,
+      planId: plan.id,
+      amount,
+      vatAmount,
+      currency: plan.currency,
+      status: 'pendiente',
+      paymentMethod: 'bancard',
+      mockPaymentUrl: null,
+    });
+
+    const mockPaymentUrl = `https://sandbox.bancard.com/mock/pay?purchase=${purchase.id}&amount=${amount}`;
+    await purchase.update({ mockPaymentUrl });
+
+    res.status(201).json({
+      purchase,
+      paymentUrl: mockPaymentUrl,
+      message: 'Pago mock creado. Usa la confirmacion para simular Bancard.',
+    });
+  } catch (error) {
+    console.error('Error creating plan checkout', error);
+    res.status(500).json({ message: 'Error al iniciar pago del plan' });
+  }
+};
+
+exports.confirmPlanPayment = async (req, res) => {
+  try {
+    if (req.user.role !== 'cliente') {
+      return res.status(403).json({ message: 'Acceso no autorizado' });
+    }
+
+    const client = await getClientForUser(req.user.id);
+    if (!client) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+
+    const purchase = await PlanPurchase.findOne({
+      where: { id: req.params.id, clientId: client.id },
+      include: [{ model: Plan, as: 'plan' }],
+    });
+
+    if (!purchase) {
+      return res.status(404).json({ message: 'Compra no encontrada' });
+    }
+
+    const { success = true, paymentReference = `MOCK-${Date.now()}` } = req.body;
+
+    if (success) {
+      await purchase.update({
+        status: 'pagado',
+        paidAt: new Date(),
+        paymentReference,
+      });
+    } else {
+      await purchase.update({
+        status: 'cancelado',
+        paidAt: null,
+        paymentReference: null,
+      });
+    }
+
+    res.json(purchase);
+  } catch (error) {
+    console.error('Error confirming plan payment', error);
+    res.status(500).json({ message: 'Error al confirmar pago' });
+  }
+};
+
