@@ -283,6 +283,64 @@ const getOverdueVaccinations = async (req, res) => {
     }
 };
 
+/**
+ * Generar PDF de carnet de vacunación
+ */
+const generatePDF = async (req, res) => {
+    try {
+        const { petId } = req.params;
+        const { generateVaccinationCard } = require('../utils/pdfGenerator');
+
+        // Obtener mascota con cliente
+        const pet = await Pet.findByPk(petId, {
+            include: [
+                {
+                    model: Client,
+                    as: 'owner',
+                    attributes: ['id', 'name', 'phone', 'email'],
+                },
+            ],
+        });
+
+        if (!pet) {
+            return res.status(404).json({ message: 'Mascota no encontrada' });
+        }
+
+        // Obtener vacunas de la mascota
+        const vaccinations = await Vaccination.findAll({
+            where: { petId },
+            include: [
+                {
+                    model: User,
+                    as: 'veterinarian',
+                    attributes: ['id', 'name', 'email'],
+                },
+            ],
+            order: [['applicationDate', 'DESC']],
+        });
+
+        // Generar PDF
+        const pdfBuffer = await generateVaccinationCard(
+            pet,
+            vaccinations,
+            pet.owner
+        );
+
+        // Configurar headers para descarga
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename=carnet-vacunacion-${pet.name}.pdf`
+        );
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        res.send(pdfBuffer);
+    } catch (error) {
+        console.error('Error al generar PDF:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getVaccinationsByPet,
     createVaccination,
@@ -290,4 +348,5 @@ module.exports = {
     deleteVaccination,
     getUpcomingVaccinations,
     getOverdueVaccinations,
+    generatePDF,
 };

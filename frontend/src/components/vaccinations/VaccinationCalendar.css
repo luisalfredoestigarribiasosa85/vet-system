@@ -1,0 +1,181 @@
+.vaccination-calendar-container {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos personalizados para react-big-calendar */
+.rbc-calendar {
+    font-family: inherit;
+}
+
+.rbc-header {
+    padding: 10px 3px;
+    font-weight: 600;
+    color: #2c3e50;
+    background: #f8f9fa;
+    border-bottom: 2px solid #3498db;
+}
+
+.rbc-today {
+    background-color: #e3f2fd;
+}
+
+.rbc-off-range-bg {
+    background-color: #fafafa;
+}
+
+.rbc-event {
+    padding: 2px 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.rbc-event:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.rbc-event-label {
+    font-size: 0.75rem;
+}
+
+.rbc-toolbar {
+    padding: 15px 0;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.rbc-toolbar button {
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.rbc-toolbar button:hover {
+    background: #f0f0f0;
+    border-color: #3498db;
+}
+
+.rbc-toolbar button.rbc-active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.rbc-toolbar button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.rbc-month-view {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.rbc-month-row {
+    border-color: #e0e0e0;
+}
+
+.rbc-day-bg {
+    border-color: #e0e0e0;
+}
+
+.rbc-date-cell {
+    padding: 5px;
+    text-align: right;
+}
+
+.rbc-date-cell>a {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.rbc-now .rbc-date-cell>a {
+    color: #3498db;
+    font-weight: 700;
+}
+
+/* Leyenda */
+.calendar-legend {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.calendar-legend h4 {
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.legend-items {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid;
+}
+
+.legend-color.applied {
+    background-color: #27ae60;
+    border-color: #229954;
+}
+
+.legend-color.upcoming {
+    background-color: #f39c12;
+    border-color: #d68910;
+}
+
+.legend-color.overdue {
+    background-color: #e74c3c;
+    border-color: #c0392b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .vaccination-calendar-container {
+        padding: 1rem;
+    }
+
+    .rbc-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rbc-toolbar-label {
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    .rbc-calendar {
+        font-size: 0.85rem;
+    }
+
+    .legend-items {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}

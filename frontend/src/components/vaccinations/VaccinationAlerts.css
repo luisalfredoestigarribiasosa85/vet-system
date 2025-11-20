@@ -1,0 +1,100 @@
+.vaccination-alerts {
+    margin-bottom: 2rem;
+}
+
+.alert {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.alert.alert-danger {
+    border-left: 4px solid #e74c3c;
+}
+
+.alert.alert-warning {
+    border-left: 4px solid #f39c12;
+}
+
+.alert-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.alert-icon {
+    font-size: 1.5rem;
+}
+
+.alert-header h4 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.alert-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.alert-list li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.alert-list li:last-child {
+    border-bottom: none;
+}
+
+.alert-list a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #2c3e50;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.alert-list a:hover {
+    color: #3498db;
+}
+
+.alert-date {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.alert-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.alert-link:hover {
+    text-decoration: underline;
+}
+
+.vaccination-alerts.loading {
+    text-align: center;
+    padding: 1rem;
+    color: #7f8c8d;
+}
+
+@media (max-width: 768px) {
+    .alert-list a {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .alert-date {
+        font-size: 0.85rem;
+    }
+}

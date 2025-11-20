@@ -46,6 +46,7 @@ app.use('/api/plans', require('./routes/plans'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/portal', require('./routes/portal'));
 app.use('/api/vaccinations', require('./routes/vaccinations'));
+app.use('/api/stats', require('./routes/stats'));
 
 // Ruta de bienvenida
 app.get('/', (req, res) => {
@@ -62,7 +63,9 @@ app.get('/', (req, res) => {
       invoices: '/api/invoices',
       plans: '/api/plans',
       payments: '/api/payments',
-      portal: '/api/portal'
+      portal: '/api/portal',
+      vaccinations: '/api/vaccinations',
+      stats: '/api/stats'
     }
   });
 });
@@ -75,13 +78,14 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     await testConnection();
-    await sequelize.sync({ alter: true });
-    console.log('✅ Base de datos sincronizada');
+    // No usar sync en desarrollo - usar seed.js para crear/actualizar tablas
+    // await sequelize.sync({ alter: true }); 
+    console.log('✅ Base de datos lista');
 
     app.listen(PORT, () => {
       console.log(`✅ Servidor corriendo en puerto ${PORT}`);
       console.log(`📍 Modo: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`⚠️  NOTA: Instala las dependencias de seguridad para activar todas las protecciones`);
+      console.log(`💡 Tip: Ejecuta 'pnpm run seed' para inicializar la base de datos`);
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);

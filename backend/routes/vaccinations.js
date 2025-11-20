@@ -8,6 +8,7 @@ const {
     deleteVaccination,
     getUpcomingVaccinations,
     getOverdueVaccinations,
+    generatePDF,
 } = require('../controllers/vaccinationController');
 
 /**
@@ -266,5 +267,33 @@ router.get('/upcoming', protect, getUpcomingVaccinations);
  *                 $ref: '#/components/schemas/Vaccination'
  */
 router.get('/overdue', protect, getOverdueVaccinations);
+
+/**
+ * @swagger
+ * /api/vaccinations/pet/{petId}/pdf:
+ *   get:
+ *     summary: Generar carnet de vacunación en PDF
+ *     tags: [Vacunas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: petId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la mascota
+ *     responses:
+ *       200:
+ *         description: PDF generado exitosamente
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Mascota no encontrada
+ */
+router.get('/pet/:petId/pdf', protect, generatePDF);
 
 module.exports = router;

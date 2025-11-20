@@ -20,6 +20,7 @@ import PortalAppointments from './pages/portal/PortalAppointments';
 import PortalPets from './pages/portal/PortalPets';
 import PortalPetDetails from './pages/portal/PortalPetDetails';
 import PortalPlans from './pages/portal/PortalPlans';
+import Vaccinations from './pages/Vaccinations';
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
           <Route path="clients" element={<Clients />} />
           <Route path="pets" element={<Pets />} />
           <Route path="pets/:petId/history" element={<MedicalHistory />} />
+          <Route path="vaccinations/:petId" element={<Vaccinations />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="medical" element={<Medical />} />
           <Route path="inventory" element={<Inventory />} />

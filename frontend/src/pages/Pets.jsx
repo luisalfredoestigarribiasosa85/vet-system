@@ -53,13 +53,13 @@ const Pets = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-        const dataToSend = {
-            ...formData,
-            clientId: toInt(formData.clientId),
-            age: toInt(formData.age) || null,
-            weight: toFloat(formData.weight) || null,
-            gender: formData.gender ? formData.gender.toLowerCase() : null
-          };
+      const dataToSend = {
+        ...formData,
+        clientId: toInt(formData.clientId),
+        age: toInt(formData.age) || null,
+        weight: toFloat(formData.weight) || null,
+        gender: formData.gender ? formData.gender.toLowerCase() : null
+      };
 
       if (selectedPet) {
         await api.put(`/pets/${selectedPet.id}`, dataToSend);
@@ -71,9 +71,9 @@ const Pets = () => {
       loadData();
       setShowModal(false);
     } catch (err) {
-        const msg = err?.response?.data?.message || 'Error al guardar mascota';
-        toast.error(msg);
-      }
+      const msg = err?.response?.data?.message || 'Error al guardar mascota';
+      toast.error(msg);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -197,6 +197,13 @@ const Pets = () => {
                 <p><strong>Dueño:</strong> {clients.find(c => c.id === pet.clientId)?.name || 'No asignado'}</p>
               </div>
               <div className="flex justify-end space-x-2 mt-4">
+                <Button
+                  variant="primary"
+                  onClick={() => window.location.href = `/vaccinations/${pet.id}`}
+                  className="text-sm"
+                >
+                  💉 Vacunas
+                </Button>
                 <Button variant="icon" onClick={() => openModal(pet)}>
                   <Edit size={18} />
                 </Button>
