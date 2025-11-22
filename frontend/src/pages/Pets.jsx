@@ -199,6 +199,13 @@ const Pets = () => {
               <div className="flex justify-end space-x-2 mt-4">
                 <Button
                   variant="primary"
+                  onClick={() => window.location.href = `/pets/${pet.id}/history`}
+                  className="text-sm"
+                >
+                  📋 Historial
+                </Button>
+                <Button
+                  variant="primary"
                   onClick={() => window.location.href = `/vaccinations/${pet.id}`}
                   className="text-sm"
                 >

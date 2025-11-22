@@ -1,93 +1,180 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../api/axios'; // Asumo que tienes un 'axios.js' configurado
-import { AuthContext } from '../contexts/AuthContext'; // Asumo un AuthContext para el token
+import api from '../api/axios';
 import Loader from '../components/common/Loader';
+import WeightChart from '../components/medical/WeightChart';
+import MedicalTimeline from '../components/medical/MedicalTimeline';
+import AllergiesSection from '../components/medical/AllergiesSection';
+import SurgeriesSection from '../components/medical/SurgeriesSection';
 
 const MedicalHistory = () => {
   const { petId } = useParams();
-  const { auth } = useContext(AuthContext);
   const [records, setRecords] = useState([]);
-  const [petName, setPetName] = useState('');
+  const [pet, setPet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('timeline'); // timeline, weight, allergies, surgeries
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        setLoading(true);
-        // Asumo que la info de la mascota se puede obtener de una ruta como /pets/:petId
-        // Esto es para obtener el nombre de la mascota para el título
-        const petRes = await api.get(`/pets/${petId}`, {
-          headers: { Authorization: `Bearer ${auth.token}` }
-        });
-        setPetName(petRes.data.name);
+    fetchHistory();
+  }, [petId]);
 
-        // Obtener el historial médico
-        const historyRes = await api.get(`/medical/pets/${petId}/records`, {
-          headers: { Authorization: `Bearer ${auth.token}` }
-        });
-        setRecords(historyRes.data);
-        setError(null);
-      } catch (err) {
-        setError('Error al cargar el historial médico. ' + (err.response?.data?.message || err.message));
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
 
-    if (petId && auth.token) {
-      fetchHistory();
+      // Obtener info de la mascota
+      const petRes = await api.get(`/pets/${petId}`);
+      setPet(petRes.data);
+
+      // Obtener historial médico
+      const historyRes = await api.get(`/medical/pets/${petId}/records`);
+      setRecords(historyRes.data);
+
+      setError(null);
+    } catch (err) {
+      setError('Error al cargar el historial médico. ' + (err.response?.data?.message || err.message));
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-  }, [petId, auth.token]);
+  };
+
+  // Extraer todas las alergias de todos los registros
+  const getAllAllergies = () => {
+    const allergiesMap = new Map();
+    records.forEach(record => {
+      if (record.allergies && Array.isArray(record.allergies)) {
+        record.allergies.forEach(allergy => {
+          if (!allergiesMap.has(allergy.name)) {
+            allergiesMap.set(allergy.name, allergy);
+          }
+        });
+      }
+    });
+    return Array.from(allergiesMap.values());
+  };
+
+  // Extraer todas las cirugías de todos los registros
+  const getAllSurgeries = () => {
+    const surgeries = [];
+    records.forEach(record => {
+      if (record.surgeries && Array.isArray(record.surgeries)) {
+        surgeries.push(...record.surgeries);
+      }
+    });
+    return surgeries.sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
 
   if (loading) {
-    return <Loader />;
+    return <Loader fullScreen />;
   }
 
   if (error) {
-    return <div className="text-red-500 text-center p-4">{error}</div>;
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+          {error}
+        </div>
+        <Link to="/pets" className="text-blue-600 hover:underline mt-4 inline-block">
+          ← Volver a Mascotas
+        </Link>
+      </div>
+    );
   }
 
+  const allergies = getAllAllergies();
+  const surgeries = getAllSurgeries();
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Historial Médico de {petName}</h1>
-      <div className="space-y-4">
-        {records.length > 0 ? (
-          records.map(record => (
-            <div key={record.id} className="bg-white p-4 rounded-lg shadow">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-lg font-semibold text-gray-800">Visita del {new Date(record.createdAt).toLocaleDateString()}</h2>
-                {record.veterinarian && <span className="text-sm text-gray-500">Atendido por: {record.veterinarian.name}</span>}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p><strong className="font-medium text-gray-600">Diagnóstico:</strong> {record.diagnosis}</p>
-                  <p><strong className="font-medium text-gray-600">Tratamiento:</strong> {record.treatment}</p>
-                </div>
-                <div>
-                  <p><strong className="font-medium text-gray-600">Peso:</strong> {record.weight || 'N/A'} kg</p>
-                  <p><strong className="font-medium text-gray-600">Temperatura:</strong> {record.temperature || 'N/A'} °C</p>
-                </div>
-              </div>
-              {record.notes && (
-                <div className="mt-2">
-                  <p><strong className="font-medium text-gray-600">Notas:</strong> {record.notes}</p>
-                </div>
-              )}
-            </div>
-          ))
-        ) : (
-          <div className="bg-white p-4 rounded-lg shadow text-center">
-            <p>No se encontraron registros médicos para esta mascota.</p>
-          </div>
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-6">
+        <Link to="/pets" className="text-blue-600 hover:underline text-sm mb-2 inline-block">
+          ← Volver a Mascotas
+        </Link>
+        <h1 className="text-3xl font-bold text-gray-800">
+          Historial Médico de {pet?.name}
+        </h1>
+        {pet && (
+          <p className="text-gray-600 mt-1">
+            {pet.species} • {pet.breed} • {pet.age} {pet.age === 1 ? 'año' : 'años'}
+          </p>
         )}
       </div>
-      <div className="mt-6">
-        <Link to="/clients" className="text-blue-500 hover:underline">
-          &larr; Volver a Clientes
-        </Link>
+
+      {/* Alerta de alergias graves */}
+      {allergies.some(a => a.severity === 'grave') && (
+        <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">🚨</span>
+            <div>
+              <h3 className="font-bold text-red-800 text-lg">¡ALERTA! Alergias Graves</h3>
+              <p className="text-red-700 text-sm mt-1">
+                Esta mascota tiene alergias graves registradas. Revisar antes de cualquier tratamiento.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {allergies.filter(a => a.severity === 'grave').map((allergy, i) => (
+                  <span key={i} className="px-3 py-1 bg-red-200 text-red-900 rounded-full text-sm font-medium">
+                    {allergy.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="bg-white rounded-xl shadow mb-6">
+        <div className="border-b border-gray-200">
+          <div className="flex overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`px-6 py-3 font-medium text-sm border-b-2 transition whitespace-nowrap ${activeTab === 'timeline'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              🩺 Historial
+            </button>
+            <button
+              onClick={() => setActiveTab('weight')}
+              className={`px-6 py-3 font-medium text-sm border-b-2 transition whitespace-nowrap ${activeTab === 'weight'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              📊 Peso
+            </button>
+            <button
+              onClick={() => setActiveTab('allergies')}
+              className={`px-6 py-3 font-medium text-sm border-b-2 transition whitespace-nowrap ${activeTab === 'allergies'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              ⚠️ Alergias ({allergies.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('surgeries')}
+              className={`px-6 py-3 font-medium text-sm border-b-2 transition whitespace-nowrap ${activeTab === 'surgeries'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              🏥 Cirugías ({surgeries.length})
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div>
+        {activeTab === 'timeline' && <MedicalTimeline records={records} />}
+        {activeTab === 'weight' && <WeightChart records={records} />}
+        {activeTab === 'allergies' && <AllergiesSection allergies={allergies} />}
+        {activeTab === 'surgeries' && <SurgeriesSection surgeries={surgeries} />}
       </div>
     </div>
   );

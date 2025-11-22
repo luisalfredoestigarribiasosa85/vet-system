@@ -570,3 +570,127 @@ exports.confirmPlanPayment = async (req, res) => {
   }
 };
 
+// Obtener vacunas de una mascota (para portal del cliente)
+exports.getPetVaccinations = async (req, res) => {
+  try {
+    if (req.user.role !== 'cliente') {
+      return res.status(403).json({ message: 'Acceso no autorizado' });
+    }
+
+    const client = await getClientForUser(req.user.id);
+    if (!client) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+
+    const pet = await Pet.findOne({
+      where: { id: req.params.petId, clientId: client.id },
+      attributes: ['id', 'name', 'species', 'breed'],
+    });
+
+    if (!pet) {
+      return res.status(404).json({ message: 'Mascota no encontrada' });
+    }
+
+    const { Vaccination } = models;
+    const vaccinations = await Vaccination.findAll({
+      where: { petId: pet.id },
+      include: [{ model: User, as: 'veterinarian', attributes: ['id', 'name'] }],
+      order: [['applicationDate', 'DESC']],
+    });
+
+    res.json({ pet, vaccinations });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al obtener vacunas' });
+  }
+};
+
+// Obtener facturas del cliente
+exports.getInvoices = async (req, res) => {
+  try {
+    if (req.user.role !== 'cliente') {
+      return res.status(403).json({ message: 'Acceso no autorizado' });
+    }
+
+    const client = await getClientForUser(req.user.id);
+    if (!client) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+
+    const { Invoice } = models;
+    const invoices = await Invoice.findAll({
+      include: [{
+        model: Pet,
+        as: 'pet',
+        where: { clientId: client.id },
+        attributes: ['id', 'name'],
+        required: true,
+      }],
+      order: [['date', 'DESC']],
+    });
+
+    res.json(invoices);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al obtener facturas' });
+  }
+};
+
+// Descargar PDF de factura
+exports.downloadInvoicePDF = async (req, res) => {
+  try {
+    if (req.user.role !== 'cliente') {
+      return res.status(403).json({ message: 'Acceso no autorizado' });
+    }
+
+    const client = await getClientForUser(req.user.id);
+    if (!client) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+
+    const { Invoice } = models;
+    const invoice = await Invoice.findOne({
+      where: { id: req.params.id },
+      include: [{
+        model: Pet,
+        as: 'pet',
+        where: { clientId: client.id },
+        attributes: ['id', 'name'],
+        required: true,
+      }],
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ message: 'Factura no encontrada' });
+    }
+
+    const { generateInvoicePDF } = require('../utils/pdfGenerator');
+    const pdfPath = `./uploads/invoices/invoice-${invoice.id}.pdf`;
+
+    // Preparar datos para el PDF
+    const invoiceData = {
+      id: invoice.id,
+      date: new Date(invoice.date).toLocaleDateString('es-PY'),
+      clientName: client.name,
+      clientPhone: client.phone || 'N/A',
+      petName: invoice.pet.name,
+      items: invoice.items || [],
+      total: parseFloat(invoice.total),
+      payment: invoice.payment,
+    };
+
+    await generateInvoicePDF(invoiceData, pdfPath);
+
+    res.download(pdfPath, `factura-${invoice.id}.pdf`, (err) => {
+      if (err) {
+        console.error('Error al descargar PDF:', err);
+        res.status(500).json({ message: 'Error al descargar PDF' });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al generar PDF de factura' });
+  }
+};
+
+

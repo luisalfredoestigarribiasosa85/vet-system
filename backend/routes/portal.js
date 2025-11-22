@@ -6,6 +6,7 @@ const {
   getProfile,
   getPets,
   getPetRecords,
+  getPetVaccinations,
   getAppointments,
   createAppointment,
   updateAppointment,
@@ -14,6 +15,8 @@ const {
   getClientPlanHistory,
   createPlanCheckout,
   confirmPlanPayment,
+  getInvoices,
+  downloadInvoicePDF,
 } = require('../controllers/portalController');
 
 router.post('/register', registerClient);
@@ -31,5 +34,9 @@ router.get('/plans', protect, getAvailablePlans);
 router.get('/plans/history', protect, getClientPlanHistory);
 router.post('/plans/checkout', protect, createPlanCheckout);
 router.post('/plans/checkout/:id/confirm', protect, confirmPlanPayment);
+
+router.get('/pets/:petId/vaccinations', protect, getPetVaccinations);
+router.get('/invoices', protect, getInvoices);
+router.get('/invoices/:id/pdf', protect, downloadInvoicePDF);
 
 module.exports = router;

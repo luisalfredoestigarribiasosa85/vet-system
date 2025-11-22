@@ -1,0 +1,178 @@
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.gallery-item {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.gallery-item:hover {
+  transform: scale(1.05);
+}
+
+.image-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.gallery-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.image-container:hover .image-overlay {
+  opacity: 1;
+}
+
+.view-text {
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.pdf-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: #f3f4f6;
+  cursor: pointer;
+  min-height: 150px;
+}
+
+.pdf-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.pdf-name {
+  font-size: 0.75rem;
+  color: #374151;
+  text-align: center;
+  word-break: break-word;
+}
+
+.gallery-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+}
+
+.delete-btn {
+  background-color: rgba(239, 68, 68, 0.9);
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background-color: rgba(220, 38, 38, 1);
+}
+
+.delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.no-images {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.lightbox-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: -2.5rem;
+  right: 0;
+  background-color: transparent;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  line-height: 1;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 0.5rem;
+}
+
+.lightbox-caption {
+  color: white;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .image-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .lightbox-image {
+    max-height: 70vh;
+  }
+}

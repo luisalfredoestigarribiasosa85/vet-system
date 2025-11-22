@@ -6,6 +6,8 @@ const Pet = require('../models/Pet');
 const Plan = require('../models/Plan');
 const Inventory = require('../models/Inventory');
 const Vaccination = require('../models/Vaccination');
+const MedicalRecord = require('../models/MedicalRecord');
+
 
 const seedDatabase = async () => {
   try {
@@ -372,6 +374,54 @@ const seedDatabase = async () => {
         isActive: true,
       },
     ]);
+
+    // Crear registros médicos
+    await MedicalRecord.bulkCreate([
+      // Registros para Max (Golden Retriever)
+      {
+        petId: pets[0].id,
+        vetId: users[1].id,
+        diagnosis: 'Chequeo general anual',
+        treatment: 'Vacunación antirrábica y desparasitación',
+        weight: 32.5,
+        temperature: 38.5,
+        notes: 'Mascota en excelente estado de salud.',
+        createdAt: new Date('2025-03-15')
+      },
+      {
+        petId: pets[0].id,
+        vetId: users[2].id,
+        diagnosis: 'Otitis externa leve',
+        treatment: 'Gotas óticas antibióticas por 7 días',
+        weight: 33.0,
+        temperature: 38.8,
+        notes: 'Infección leve del oído derecho.',
+        createdAt: new Date('2025-06-10')
+      },
+      // Registros para Luna (Gato Siamés)
+      {
+        petId: pets[1].id,
+        vetId: users[2].id,
+        diagnosis: 'Vacunación triple felina',
+        treatment: 'Aplicación de vacuna triple felina',
+        weight: 4.2,
+        temperature: 38.7,
+        notes: 'Primera dosis de vacuna.',
+        createdAt: new Date('2025-04-05')
+      },
+      // Registros para Rocky (Bulldog)
+      {
+        petId: pets[2].id,
+        vetId: users[1].id,
+        diagnosis: 'Dermatitis alérgica',
+        treatment: 'Antihistamínicos y champú medicado',
+        weight: 12.5,
+        temperature: 38.6,
+        notes: 'Alergia alimentaria sospechada.',
+        createdAt: new Date('2025-05-12')
+      }
+    ]);
+    console.log('🏥 Registros médicos creados');
 
     console.log('📋 Planes iniciales creados');
 

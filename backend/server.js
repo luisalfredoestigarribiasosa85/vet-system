@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const { sequelize, testConnection } = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
@@ -17,14 +18,14 @@ app.use(cors()); // CORS simple por ahora
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Servir archivos estáticos (uploads)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Logging simple (hasta que instales Winston)
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url} - ${req.ip}`);
   next();
 });
-
-// Archivos estaticos
-app.use('/uploads', express.static('uploads'));
 
 // Swagger Documentation
 const swaggerUi = require('swagger-ui-express');
@@ -45,6 +46,7 @@ app.use('/api/invoices', require('./routes/invoices'));
 app.use('/api/plans', require('./routes/plans'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/portal', require('./routes/portal'));
+app.use('/api/medical', require('./routes/medicalRecords'));
 app.use('/api/vaccinations', require('./routes/vaccinations'));
 app.use('/api/stats', require('./routes/stats'));
 
