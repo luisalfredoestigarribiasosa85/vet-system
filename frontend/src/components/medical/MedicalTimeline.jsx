@@ -1,18 +1,23 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import api from '../../api/axios';
 import ImageUploader from './ImageUploader';
 import ImageGallery from './ImageGallery';
 import './ImageUploader.css';
 import './ImageGallery.css';
+
 const MedicalTimeline = ({ records }) => {
     const [expandedRecords, setExpandedRecords] = useState({});
     const [localRecords, setLocalRecords] = useState(records);
+    const [downloading, setDownloading] = useState(null);
+
     const toggleExpand = (recordId) => {
         setExpandedRecords(prev => ({
             ...prev,
             [recordId]: !prev[recordId]
         }));
     };
+
     const handleUploadSuccess = (recordId, attachment) => {
         setLocalRecords(prevRecords =>
             prevRecords.map(record =>
@@ -22,6 +27,7 @@ const MedicalTimeline = ({ records }) => {
             )
         );
     };
+
     const handleDeleteAttachment = (recordId, attachmentId) => {
         setLocalRecords(prevRecords =>
             prevRecords.map(record =>
@@ -31,19 +37,68 @@ const MedicalTimeline = ({ records }) => {
             )
         );
     };
+
+    const handleDownloadPrescription = async (recordId, petName) => {
+        try {
+            setDownloading(recordId);
+            const response = await api.get(`/medical/records/${recordId}/prescription-pdf`, {
+                responseType: 'blob',
+                headers: {
+                    'Accept': 'application/pdf'
+                }
+            });
+
+            // Verificar si la respuesta es un JSON (error) en lugar de un PDF
+            if (response.data.type === 'application/json') {
+                const text = await response.data.text();
+                const error = JSON.parse(text);
+                throw new Error(error.message || 'Error al generar el PDF');
+            }
+
+            // Crear URL del blob con tipo explícito
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+
+            // Nombre del archivo seguro
+            const safePetName = (petName || 'mascota').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            const dateStr = new Date().toISOString().split('T')[0];
+            link.setAttribute('download', `receta_${safePetName}_${dateStr}.pdf`);
+
+            document.body.appendChild(link);
+            link.click();
+
+            // Limpieza
+            setTimeout(() => {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+
+        } catch (error) {
+            console.error('Error al descargar la receta:', error);
+            alert('Error al descargar la receta: ' + (error.message || 'Intente nuevamente'));
+        } finally {
+            setDownloading(null);
+        }
+    };
+
     const sortedRecords = [...localRecords].sort((a, b) =>
         new Date(b.createdAt) - new Date(a.createdAt)
     );
+
     const getEventIcon = (record) => {
         if (record.surgeries && record.surgeries.length > 0) return '🏥';
         if (record.vaccines && record.vaccines.length > 0) return '💉';
         return '🩺';
     };
+
     const getEventColor = (record) => {
         if (record.surgeries && record.surgeries.length > 0) return 'bg-red-500';
         if (record.vaccines && record.vaccines.length > 0) return 'bg-blue-500';
         return 'bg-green-500';
     };
+
     return (
         <div className="bg-white rounded-xl shadow p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-6">Historial Médico</h3>
@@ -72,11 +127,22 @@ const MedicalTimeline = ({ records }) => {
                                                 <p className="text-xs text-gray-400">Dr. {record.veterinarian.name}</p>
                                             )}
                                         </div>
-                                        {record.weight && (
-                                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                                {record.weight} kg
-                                            </span>
-                                        )}
+                                        <div className="flex gap-2">
+                                            {record.treatment && (
+                                                <button
+                                                    onClick={() => handleDownloadPrescription(record.id, record.pet?.name || 'mascota')}
+                                                    disabled={downloading === record.id}
+                                                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded-full hover:bg-blue-700 transition flex items-center gap-1 disabled:opacity-50"
+                                                >
+                                                    {downloading === record.id ? '⏳' : '📄'} Receta
+                                                </button>
+                                            )}
+                                            {record.weight && (
+                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full flex items-center">
+                                                    {record.weight} kg
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="space-y-2">
                                         <div>
@@ -137,7 +203,9 @@ const MedicalTimeline = ({ records }) => {
         </div>
     );
 };
+
 MedicalTimeline.propTypes = {
     records: PropTypes.array.isRequired,
 };
+
 export default MedicalTimeline;

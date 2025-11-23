@@ -7,7 +7,7 @@ const {
     createRecord,
     uploadImage,
     deleteAttachment,
-    getRecordById
+    getRecordById, generatePrescriptionPDF
 } = require('../controllers/medicalRecordsController');
 
 /**
@@ -163,5 +163,6 @@ router.post('/records/:recordId/upload', protect, upload.single('image'), upload
  *         description: Registro o archivo no encontrado
  */
 router.delete('/records/:recordId/attachments/:attachmentId', protect, deleteAttachment);
-
+// Generar PDF de receta
+router.get('/records/:id/prescription-pdf', protect, generatePrescriptionPDF);
 module.exports = router;

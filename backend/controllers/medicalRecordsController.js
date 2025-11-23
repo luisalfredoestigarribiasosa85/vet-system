@@ -174,4 +174,81 @@ exports.getRecordById = async (req, res) => {
     }
 };
 
-module.exports = exports;
+// @desc    Generar PDF de receta médica
+// @route   GET /api/medical/records/:id/prescription-pdf
+// @access  Private
+exports.generatePrescriptionPDF = async (req, res) => {
+    try {
+        const record = await MedicalRecord.findByPk(req.params.id, {
+            include: [
+                {
+                    model: User,
+                    as: 'veterinarian',
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: Pet,
+                    as: 'pet',
+                    attributes: ['id', 'name', 'species', 'breed', 'age'],
+                    include: [{
+                        model: require('../models/Client'),
+                        as: 'owner',
+                        attributes: ['name']
+                    }]
+                }
+            ]
+        });
+
+        if (!record) {
+            return res.status(404).json({ message: 'Registro médico no encontrado' });
+        }
+
+        const PDFDocument = require('pdfkit');
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=receta-${record.pet.name}.pdf`);
+
+        doc.pipe(res);
+
+        // Header
+        doc.fontSize(24).font('Helvetica-Bold').text('RECETA MÉDICA', { align: 'center' });
+        doc.fontSize(10).font('Helvetica').text('Clínica Veterinaria', { align: 'center' });
+        doc.moveDown(2);
+
+        // Información del paciente
+        doc.fontSize(12).font('Helvetica-Bold').text('DATOS DEL PACIENTE');
+        doc.moveDown(0.5);
+        doc.fontSize(10).font('Helvetica');
+        doc.text(`Mascota: ${record.pet.name}`);
+        doc.text(`Especie: ${record.pet.species}`);
+        doc.text(`Raza: ${record.pet.breed}`);
+        doc.text(`Propietario: ${record.pet.owner?.name || 'N/A'}`);
+        doc.text(`Peso: ${record.weight || 'N/A'} kg`);
+        doc.moveDown();
+
+        // Diagnóstico
+        doc.fontSize(12).font('Helvetica-Bold').text('DIAGNÓSTICO');
+        doc.moveDown(0.5);
+        doc.fontSize(10).font('Helvetica');
+        doc.text(record.diagnosis);
+        doc.moveDown();
+
+        // Tratamiento
+        doc.fontSize(12).font('Helvetica-Bold').text('PRESCRIPCIÓN');
+        doc.moveDown(0.5);
+        doc.text(record.treatment || 'Ver indicaciones del veterinario');
+        doc.moveDown(2);
+
+        // Fecha y firma
+        doc.text(`Fecha: ${new Date(record.createdAt).toLocaleDateString('es-PY')}`);
+        doc.text(`Veterinario: ${record.veterinarian?.name || 'N/A'}`);
+
+        doc.end();
+    } catch (error) {
+        console.error('Error al generar PDF:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ message: 'Error al generar PDF de receta' });
+        }
+    }
+};
