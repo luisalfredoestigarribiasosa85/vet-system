@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const Pet = require('./Pet');
 
 const Invoice = sequelize.define('Invoice', {
   id: {
@@ -8,54 +7,94 @@ const Invoice = sequelize.define('Invoice', {
     primaryKey: true,
     autoIncrement: true
   },
-  petId: {
+  invoiceNumber: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    comment: 'Número de factura único (ej: FAC-2025-0001)'
+  },
+  clientId: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Pet,
+      model: 'clients',
       key: 'id'
-    }
+    },
+    comment: 'Cliente que recibe la factura'
   },
-  date: {
+  petId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'pets',
+      key: 'id'
+    },
+    comment: 'Mascota asociada (opcional)'
+  },
+  issueDate: {
     type: DataTypes.DATE,
     allowNull: false,
-    defaultValue: DataTypes.NOW
+    defaultValue: DataTypes.NOW,
+    comment: 'Fecha de emisión de la factura'
+  },
+  dueDate: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Fecha de vencimiento (para pagos a crédito)'
   },
   items: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     allowNull: false,
-    defaultValue: []
+    defaultValue: [],
+    comment: 'Array de items: [{ serviceId, name, quantity, price, subtotal }]'
   },
   subtotal: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
+    type: DataTypes.DECIMAL(12, 0),
+    allowNull: false,
+    comment: 'Subtotal en Guaraníes'
+  },
+  discount: {
+    type: DataTypes.DECIMAL(12, 0),
+    defaultValue: 0,
+    comment: 'Descuento aplicado en Guaraníes'
   },
   tax: {
-    type: DataTypes.DECIMAL(10, 2),
-    defaultValue: 0
+    type: DataTypes.DECIMAL(12, 0),
+    defaultValue: 0,
+    comment: 'IVA u otros impuestos en Guaraníes'
   },
   total: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
+    type: DataTypes.DECIMAL(12, 0),
+    allowNull: false,
+    comment: 'Total a pagar en Guaraníes'
   },
-  payment: {
-    type: DataTypes.ENUM('efectivo', 'tarjeta', 'transferencia'),
-    allowNull: false
+  amountPaid: {
+    type: DataTypes.DECIMAL(12, 0),
+    defaultValue: 0,
+    comment: 'Monto ya pagado en Guaraníes'
   },
   status: {
-    type: DataTypes.ENUM('pendiente', 'pagado', 'cancelado'),
-    defaultValue: 'pagado'
+    type: DataTypes.ENUM('pendiente', 'pagado', 'parcial', 'vencido', 'cancelado'),
+    defaultValue: 'pendiente',
+    comment: 'Estado de la factura'
   },
   notes: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    comment: 'Notas o comentarios adicionales'
+  },
+  createdBy: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    comment: 'Usuario que creó la factura'
   }
 }, {
   tableName: 'invoices',
   timestamps: true
 });
-
-// Relación
-Invoice.belongsTo(Pet, { foreignKey: 'petId', as: 'pet' });
 
 module.exports = Invoice;

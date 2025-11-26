@@ -252,3 +252,128 @@ exports.generatePrescriptionPDF = async (req, res) => {
         }
     }
 };
+
+// @desc    Obtener estadísticas del dashboard médico
+// @route   GET /api/medical/dashboard/stats
+// @access  Private
+exports.getDashboardStats = async (req, res) => {
+    try {
+        const { Op } = require('sequelize');
+        const Client = require('../models/Client');
+
+        // 1. Total de registros médicos
+        const totalRecords = await MedicalRecord.count();
+
+        // 2. Registros de este mes
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const recordsThisMonth = await MedicalRecord.count({
+            where: {
+                createdAt: {
+                    [Op.gte]: startOfMonth
+                }
+            }
+        });
+
+        // 3. Diagnósticos más comunes (top 5)
+        const diagnosisRecords = await MedicalRecord.findAll({
+            attributes: ['diagnosis'],
+            raw: true
+        });
+
+        const diagnosisCount = {};
+        diagnosisRecords.forEach(record => {
+            const diagnosis = record.diagnosis.trim();
+            diagnosisCount[diagnosis] = (diagnosisCount[diagnosis] || 0) + 1;
+        });
+
+        const commonDiagnoses = Object.entries(diagnosisCount)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+
+        // 4. Tendencias mensuales (últimos 6 meses)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        const monthlyRecords = await MedicalRecord.findAll({
+            where: {
+                createdAt: {
+                    [Op.gte]: sixMonthsAgo
+                }
+            },
+            attributes: ['createdAt'],
+            raw: true
+        });
+
+        const monthlyCount = {};
+        monthlyRecords.forEach(record => {
+            const date = new Date(record.createdAt);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            monthlyCount[monthKey] = (monthlyCount[monthKey] || 0) + 1;
+        });
+
+        const monthlyTrends = Object.entries(monthlyCount)
+            .map(([month, count]) => ({ month, count }))
+            .sort((a, b) => a.month.localeCompare(b.month));
+
+        // 5. Registros recientes (últimos 10)
+        const recentRecords = await MedicalRecord.findAll({
+            limit: 10,
+            order: [['createdAt', 'DESC']],
+            include: [
+                {
+                    model: User,
+                    as: 'veterinarian',
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: Pet,
+                    as: 'pet',
+                    attributes: ['id', 'name', 'species'],
+                    include: [{
+                        model: Client,
+                        as: 'owner',
+                        attributes: ['name']
+                    }]
+                }
+            ]
+        });
+
+        // 6. Distribución por especies
+        const speciesRecords = await MedicalRecord.findAll({
+            include: [{
+                model: Pet,
+                as: 'pet',
+                attributes: ['species']
+            }],
+            raw: true
+        });
+
+        const speciesCount = {};
+        speciesRecords.forEach(record => {
+            const species = record['pet.species'];
+            if (species) {
+                speciesCount[species] = (speciesCount[species] || 0) + 1;
+            }
+        });
+
+        const recordsBySpecies = Object.entries(speciesCount)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count);
+
+        res.json({
+            totalRecords,
+            recordsThisMonth,
+            commonDiagnoses,
+            monthlyTrends,
+            recentRecords,
+            recordsBySpecies
+        });
+    } catch (error) {
+        console.error('Error al obtener estadísticas del dashboard:', error);
+        res.status(500).json({ message: 'Error al obtener estadísticas del dashboard' });
+    }
+};

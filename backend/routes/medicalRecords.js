@@ -7,7 +7,9 @@ const {
     createRecord,
     uploadImage,
     deleteAttachment,
-    getRecordById, generatePrescriptionPDF
+    getRecordById,
+    generatePrescriptionPDF,
+    getDashboardStats
 } = require('../controllers/medicalRecordsController');
 
 /**
@@ -163,6 +165,36 @@ router.post('/records/:recordId/upload', protect, upload.single('image'), upload
  *         description: Registro o archivo no encontrado
  */
 router.delete('/records/:recordId/attachments/:attachmentId', protect, deleteAttachment);
+
+/**
+ * @swagger
+ * /api/medical/dashboard/stats:
+ *   get:
+ *     summary: Obtener estadísticas del historial médico para el dashboard
+ *     tags: [Medical Records]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Estadísticas del historial médico
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalRecords:
+ *                   type: integer
+ *                 recordsThisMonth:
+ *                   type: integer
+ *                 commonDiagnoses:
+ *                   type: array
+ *                 monthlyTrends:
+ *                   type: array
+ *                 recentRecords:
+ *                   type: array
+ */
+router.get('/dashboard/stats', protect, getDashboardStats);
+
 // Generar PDF de receta
 router.get('/records/:id/prescription-pdf', protect, generatePrescriptionPDF);
 module.exports = router;

@@ -7,6 +7,8 @@ const Appointment = require('./Appointment');
 const MedicalRecord = require('./MedicalRecord');
 const Inventory = require('./Inventory');
 const Invoice = require('./Invoice');
+const Payment = require('./Payment');
+const Service = require('./Service');
 const Plan = require('./Plan');
 const PlanPurchase = require('./PlanPurchase');
 const Vaccination = require('./Vaccination');
@@ -41,6 +43,23 @@ Vaccination.belongsTo(Pet, { foreignKey: 'petId', as: 'pet' });
 User.hasMany(Vaccination, { foreignKey: 'vetId', as: 'vaccinations' });
 Vaccination.belongsTo(User, { foreignKey: 'vetId', as: 'veterinarian' });
 
+// Invoice relationships
+Client.hasMany(Invoice, { foreignKey: 'clientId', as: 'invoices' });
+Invoice.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
+
+Pet.hasMany(Invoice, { foreignKey: 'petId', as: 'invoices' });
+Invoice.belongsTo(Pet, { foreignKey: 'petId', as: 'pet' });
+
+User.hasMany(Invoice, { foreignKey: 'createdBy', as: 'createdInvoices' });
+Invoice.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+
+// Payment relationships
+Invoice.hasMany(Payment, { foreignKey: 'invoiceId', as: 'payments' });
+Payment.belongsTo(Invoice, { foreignKey: 'invoiceId', as: 'invoice' });
+
+User.hasMany(Payment, { foreignKey: 'processedBy', as: 'processedPayments' });
+Payment.belongsTo(User, { foreignKey: 'processedBy', as: 'processor' });
+
 module.exports = {
   sequelize,
   User,
@@ -50,6 +69,8 @@ module.exports = {
   MedicalRecord,
   Inventory,
   Invoice,
+  Payment,
+  Service,
   Plan,
   PlanPurchase,
   Vaccination,
