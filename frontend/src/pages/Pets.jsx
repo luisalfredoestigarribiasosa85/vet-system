@@ -161,10 +161,10 @@ const Pets = () => {
   if (loading) return <Loader fullScreen />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">Mascotas</h1>
-        <Button icon={Plus} variant="success" onClick={() => openModal()}>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Mascotas</h1>
+        <Button icon={Plus} variant="success" onClick={() => openModal()} className="w-full sm:w-auto">
           Nueva Mascota
         </Button>
       </div>
@@ -183,40 +183,46 @@ const Pets = () => {
       {filteredPets.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPets.map(pet => (
-            <div key={pet.id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
+            <div key={pet.id} className="bg-white rounded-xl shadow-md p-4 sm:p-6 hover:shadow-lg transition">
               <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center">
-                  <PawPrint className="text-green-600 mr-2" size={24} />
-                  <h3 className="text-xl font-semibold text-gray-800">{pet.name}</h3>
+                <div className="flex items-center min-w-0 flex-1">
+                  <PawPrint className="text-green-600 mr-2 flex-shrink-0" size={24} />
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800 truncate">{pet.name}</h3>
                 </div>
               </div>
-              <div className="space-y-2 text-sm text-gray-600">
+              <div className="space-y-2 text-xs sm:text-sm text-gray-600">
                 <p><strong>Especie:</strong> {pet.species}</p>
                 <p><strong>Raza:</strong> {pet.breed}</p>
                 <p><strong>Edad:</strong> {pet.age} años</p>
                 <p><strong>Dueño:</strong> {clients.find(c => c.id === pet.clientId)?.name || 'No asignado'}</p>
               </div>
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button
-                  variant="primary"
-                  onClick={() => window.location.href = `/pets/${pet.id}/history`}
-                  className="text-sm"
-                >
-                  📋 Historial
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={() => window.location.href = `/vaccinations/${pet.id}`}
-                  className="text-sm"
-                >
-                  💉 Vacunas
-                </Button>
-                <Button variant="icon" onClick={() => openModal(pet)}>
-                  <Edit size={18} />
-                </Button>
-                <Button variant="icon" className="text-red-500" onClick={() => handleDelete(pet.id)}>
-                  <Trash2 size={18} />
-                </Button>
+              <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
+                <div className="flex gap-2 flex-1 sm:flex-initial">
+                  <Button
+                    variant="primary"
+                    onClick={() => window.location.href = `/pets/${pet.id}/history`}
+                    className="text-xs sm:text-sm flex-1 sm:flex-initial px-3 sm:px-4"
+                  >
+                    <span className="hidden sm:inline">📋 </span>
+                    Historial
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => window.location.href = `/vaccinations/${pet.id}`}
+                    className="text-xs sm:text-sm flex-1 sm:flex-initial px-3 sm:px-4"
+                  >
+                    <span className="hidden sm:inline">💉 </span>
+                    Vacunas
+                  </Button>
+                </div>
+                <div className="flex gap-2 justify-end sm:justify-start">
+                  <Button variant="icon" onClick={() => openModal(pet)} className="p-2">
+                    <Edit size={18} />
+                  </Button>
+                  <Button variant="icon" className="text-red-500 p-2" onClick={() => handleDelete(pet.id)}>
+                    <Trash2 size={18} />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

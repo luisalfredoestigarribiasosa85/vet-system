@@ -29,13 +29,52 @@ const User = sequelize.define('User', {
       isEmail: true
     }
   },
+  organizationId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'organizations',
+      key: 'id'
+    },
+    comment: 'Organización a la que pertenece el usuario'
+  },
   role: {
-    type: DataTypes.ENUM('admin', 'veterinario', 'recepcionista', 'cliente'),
-    defaultValue: 'recepcionista'
+    type: DataTypes.ENUM('super_admin', 'admin', 'veterinario', 'recepcionista', 'cliente'),
+    defaultValue: 'recepcionista',
+    comment: 'Rol global del usuario'
+  },
+  organizationRole: {
+    type: DataTypes.ENUM('owner', 'admin', 'member'),
+    allowNull: true,
+    comment: 'Rol dentro de la organización'
+  },
+  isOwner: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    comment: 'Si es el propietario de la organización'
   },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  invitedBy: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    comment: 'Usuario que invitó a este usuario'
+  },
+  invitationToken: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    comment: 'Token para aceptar invitación'
+  },
+  invitationExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Fecha de expiración de la invitación'
   }
 }, {
   tableName: 'users',

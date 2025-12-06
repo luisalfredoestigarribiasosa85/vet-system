@@ -100,77 +100,91 @@ const MedicalTimeline = ({ records }) => {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-6">Historial Médico</h3>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-5 sm:mb-6 pb-3 border-b border-gray-200">Historial Médico</h3>
             {sortedRecords.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">No hay registros médicos</p>
             ) : (
                 <div className="relative">
-                    <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                    <div className="space-y-6">
+                    <div className="absolute left-6 sm:left-7 top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-300 via-gray-200 to-gray-300"></div>
+                    <div className="space-y-6 sm:space-y-6">
                         {sortedRecords.map((record) => (
-                            <div key={record.id} className="relative pl-16">
-                                <div className={`absolute left-3 w-6 h-6 rounded-full ${getEventColor(record)} flex items-center justify-center text-white text-xs font-bold shadow-lg`}>
-                                    {getEventIcon(record)}
+                            <div key={record.id} className="relative pl-16 sm:pl-20">
+                                <div className={`absolute left-4 sm:left-5 w-10 h-10 sm:w-12 sm:h-12 rounded-full ${getEventColor(record)} flex items-center justify-center text-white shadow-lg border-4 border-white z-10`}>
+                                    <span className="text-base sm:text-lg">{getEventIcon(record)}</span>
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-4 hover:shadow-md transition">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <p className="text-sm text-gray-500">
-                                                {new Date(record.createdAt).toLocaleDateString('es-PY', {
-                                                    day: 'numeric',
-                                                    month: 'long',
-                                                    year: 'numeric'
-                                                })}
+                                <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5 hover:shadow-lg transition-all">
+                                    {/* Header con fecha y veterinario */}
+                                    <div className="mb-4 pb-3 border-b border-gray-100">
+                                        <p className="text-base sm:text-lg font-bold text-gray-800 mb-2">
+                                            {new Date(record.createdAt).toLocaleDateString('es-PY', {
+                                                day: 'numeric',
+                                                month: 'long',
+                                                year: 'numeric'
+                                            })}
+                                        </p>
+                                        {record.veterinarian && (
+                                            <p className="text-sm sm:text-base text-gray-600 flex items-center gap-2">
+                                                <span className="text-lg">👨‍⚕️</span>
+                                                <span>Dr. {record.veterinarian.name}</span>
                                             </p>
-                                            {record.veterinarian && (
-                                                <p className="text-xs text-gray-400">Dr. {record.veterinarian.name}</p>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-2">
-                                            {record.treatment && (
-                                                <button
-                                                    onClick={() => handleDownloadPrescription(record.id, record.pet?.name || 'mascota')}
-                                                    disabled={downloading === record.id}
-                                                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded-full hover:bg-blue-700 transition flex items-center gap-1 disabled:opacity-50"
-                                                >
-                                                    {downloading === record.id ? '⏳' : '📄'} Receta
-                                                </button>
-                                            )}
-                                            {record.weight && (
-                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full flex items-center">
-                                                    {record.weight} kg
-                                                </span>
-                                            )}
-                                        </div>
+                                        )}
                                     </div>
-                                    <div className="space-y-2">
+
+                                    {/* Botones de acción y peso - Mejor organizados */}
+                                    <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                                        {record.treatment && (
+                                            <button
+                                                onClick={() => handleDownloadPrescription(record.id, record.pet?.name || 'mascota')}
+                                                disabled={downloading === record.id}
+                                                className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
+                                            >
+                                                <span className="text-lg">{downloading === record.id ? '⏳' : '📄'}</span>
+                                                <span>{downloading === record.id ? 'Descargando...' : 'Descargar Receta'}</span>
+                                            </button>
+                                        )}
+                                        {record.weight && (
+                                            <div className="w-full sm:w-auto px-4 py-2.5 bg-green-100 text-green-800 text-sm sm:text-base font-semibold rounded-lg flex items-center justify-center gap-2 shadow-sm border border-green-200">
+                                                <span className="text-lg">⚖️</span>
+                                                <span>{record.weight} kg</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Contenido médico */}
+                                    <div className="space-y-4">
                                         <div>
-                                            <p className="text-sm font-semibold text-gray-700">Diagnóstico:</p>
-                                            <p className="text-sm text-gray-600">{record.diagnosis}</p>
+                                            <p className="text-sm sm:text-base font-bold text-gray-800 mb-2">Diagnóstico:</p>
+                                            <p className="text-sm sm:text-base text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg">{record.diagnosis}</p>
                                         </div>
                                         {record.treatment && (
                                             <div>
-                                                <p className="text-sm font-semibold text-gray-700">Tratamiento:</p>
-                                                <p className="text-sm text-gray-600">{record.treatment}</p>
+                                                <p className="text-sm sm:text-base font-bold text-gray-800 mb-2">Tratamiento:</p>
+                                                <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap bg-blue-50 p-3 rounded-lg">{record.treatment}</p>
                                             </div>
                                         )}
                                         {record.temperature && (
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm font-semibold text-gray-700">Temperatura:</span>
-                                                <span className="text-sm text-gray-600">{record.temperature}°C</span>
+                                            <div className="flex items-center justify-between gap-3 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200">
+                                                <span className="text-sm sm:text-base font-semibold text-gray-700 flex items-center gap-2">
+                                                    <span className="text-lg">🌡️</span>
+                                                    <span>Temperatura:</span>
+                                                </span>
+                                                <span className="text-base sm:text-lg text-gray-800 font-bold">{record.temperature}°C</span>
                                             </div>
                                         )}
                                         {record.notes && (
-                                            <div>
-                                                <p className="text-sm font-semibold text-gray-700">Notas:</p>
-                                                <p className="text-sm text-gray-600 italic">{record.notes}</p>
+                                            <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-400">
+                                                <p className="text-sm sm:text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
+                                                    <span>📝</span>
+                                                    <span>Notas:</span>
+                                                </p>
+                                                <p className="text-sm sm:text-base text-gray-700 italic leading-relaxed">{record.notes}</p>
                                             </div>
                                         )}
                                         {/* Galería de imágenes */}
                                         {record.attachments && record.attachments.length > 0 && (
-                                            <div className="mt-3">
-                                                <p className="text-sm font-semibold text-gray-700 mb-2">Archivos adjuntos:</p>
+                                            <div className="mt-4 pt-4 border-t border-gray-200">
+                                                <p className="text-sm sm:text-base font-bold text-gray-800 mb-3">Archivos adjuntos:</p>
                                                 <ImageGallery
                                                     attachments={record.attachments}
                                                     recordId={record.id}
@@ -179,18 +193,21 @@ const MedicalTimeline = ({ records }) => {
                                             </div>
                                         )}
                                         {/* Uploader de imágenes */}
-                                        <div className="mt-3">
+                                        <div className="mt-4 pt-4 border-t border-gray-200">
                                             <button
                                                 onClick={() => toggleExpand(record.id)}
-                                                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                                className="w-full sm:w-auto text-sm sm:text-base text-blue-600 hover:text-blue-800 font-medium flex items-center justify-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-50 transition"
                                             >
-                                                {expandedRecords[record.id] ? '➖ Ocultar subida de archivos' : '➕ Subir archivo'}
+                                                <span className="text-lg">{expandedRecords[record.id] ? '➖' : '➕'}</span>
+                                                <span>{expandedRecords[record.id] ? 'Ocultar subida de archivos' : 'Subir archivo'}</span>
                                             </button>
                                             {expandedRecords[record.id] && (
-                                                <ImageUploader
-                                                    recordId={record.id}
-                                                    onUploadSuccess={(attachment) => handleUploadSuccess(record.id, attachment)}
-                                                />
+                                                <div className="mt-4">
+                                                    <ImageUploader
+                                                        recordId={record.id}
+                                                        onUploadSuccess={(attachment) => handleUploadSuccess(record.id, attachment)}
+                                                    />
+                                                </div>
                                             )}
                                         </div>
                                     </div>

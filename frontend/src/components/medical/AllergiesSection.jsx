@@ -37,24 +37,24 @@ const AllergiesSection = ({ allergies }) => {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Alergias Conocidas</h3>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-5 pb-3 border-b border-gray-200">Alergias Conocidas</h3>
 
             <div className="space-y-3">
                 {allergies.map((allergy, index) => (
                     <div
                         key={index}
-                        className={`border-2 rounded-lg p-4 ${getSeverityColor(allergy.severity)}`}
+                        className={`border-2 rounded-lg p-3 sm:p-4 ${getSeverityColor(allergy.severity)}`}
                     >
-                        <div className="flex items-start gap-3">
-                            <span className="text-2xl">{getSeverityIcon(allergy.severity)}</span>
-                            <div className="flex-1">
-                                <h4 className="font-semibold text-lg">{allergy.name}</h4>
-                                <p className="text-sm capitalize mt-1">
+                        <div className="flex items-start gap-2 sm:gap-3">
+                            <span className="text-xl sm:text-2xl flex-shrink-0">{getSeverityIcon(allergy.severity)}</span>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-base sm:text-lg">{allergy.name}</h4>
+                                <p className="text-xs sm:text-sm capitalize mt-1">
                                     Severidad: <span className="font-medium">{allergy.severity}</span>
                                 </p>
                                 {allergy.notes && (
-                                    <p className="text-sm mt-2 italic">{allergy.notes}</p>
+                                    <p className="text-xs sm:text-sm mt-2 italic">{allergy.notes}</p>
                                 )}
                             </div>
                         </div>

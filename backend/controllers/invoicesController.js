@@ -137,6 +137,29 @@ exports.createInvoice = async (req, res) => {
         // Generar número de factura
         const invoiceNumber = await generateInvoiceNumber();
 
+        // Manejar fecha de vencimiento
+        const issueDate = new Date(); // Fecha de emisión (hoy)
+        let finalDueDate = null;
+
+        if (dueDate) {
+            // Si se proporciona fecha de vencimiento, validar que sea posterior a la fecha de emisión
+            const providedDueDate = new Date(dueDate);
+            // Normalizar fechas a medianoche para comparar solo fechas sin horas
+            const issueDateOnly = new Date(issueDate.getFullYear(), issueDate.getMonth(), issueDate.getDate());
+            const dueDateOnly = new Date(providedDueDate.getFullYear(), providedDueDate.getMonth(), providedDueDate.getDate());
+
+            if (dueDateOnly <= issueDateOnly) {
+                return res.status(400).json({
+                    message: 'La fecha de vencimiento debe ser posterior a la fecha de emisión'
+                });
+            }
+            finalDueDate = providedDueDate;
+        } else {
+            // Si no se proporciona, establecer 30 días después de la fecha de emisión
+            finalDueDate = new Date(issueDate);
+            finalDueDate.setDate(finalDueDate.getDate() + 30);
+        }
+
         const invoice = await Invoice.create({
             invoiceNumber,
             clientId,
@@ -149,7 +172,7 @@ exports.createInvoice = async (req, res) => {
             amountPaid: 0,
             status: 'pendiente',
             notes,
-            dueDate: dueDate || null,
+            dueDate: finalDueDate,
             createdBy: req.user.id
         });
 
@@ -193,9 +216,35 @@ exports.updateInvoice = async (req, res) => {
 
         const { items, discount, tax, notes, dueDate, status } = req.body;
 
+        // Validar fecha de vencimiento si se proporciona
+        let finalDueDate = invoice.dueDate;
+        if (dueDate !== undefined) {
+            if (dueDate === null || dueDate === '') {
+                // Si se envía null o vacío, establecer 30 días después de la fecha de emisión
+                const issueDate = new Date(invoice.issueDate);
+                finalDueDate = new Date(issueDate);
+                finalDueDate.setDate(finalDueDate.getDate() + 30);
+            } else {
+                // Validar que la fecha de vencimiento sea posterior a la fecha de emisión
+                const providedDueDate = new Date(dueDate);
+                const issueDate = new Date(invoice.issueDate);
+
+                // Normalizar fechas a medianoche para comparar solo fechas sin horas
+                const issueDateOnly = new Date(issueDate.getFullYear(), issueDate.getMonth(), issueDate.getDate());
+                const dueDateOnly = new Date(providedDueDate.getFullYear(), providedDueDate.getMonth(), providedDueDate.getDate());
+
+                if (dueDateOnly <= issueDateOnly) {
+                    return res.status(400).json({
+                        message: 'La fecha de vencimiento debe ser posterior a la fecha de emisión'
+                    });
+                }
+                finalDueDate = providedDueDate;
+            }
+        }
+
         let updateData = {
             notes: notes !== undefined ? notes : invoice.notes,
-            dueDate: dueDate !== undefined ? dueDate : invoice.dueDate,
+            dueDate: finalDueDate,
             status: status || invoice.status
         };
 
@@ -356,7 +405,7 @@ exports.generateInvoicePDF = async (req, res) => {
         const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=factura-${invoice.invoiceNumber}.pdf`);
+        res.setHeader('Content-Disposition', `attachment; filename="factura-${invoice.invoiceNumber}.pdf"`);
 
         doc.pipe(res);
 
@@ -489,7 +538,7 @@ exports.getPaymentStats = async (req, res) => {
             attributes: [
                 'paymentMethod',
                 [Payment.sequelize.fn('COUNT', Payment.sequelize.col('id')), 'count'],
-                [Payment.sequelize.fn('SUM', Payment.sequelize.col('amount')), 'total']
+                [Payment.sequelize.fn('SUM', Payment.sequelize.cast(Payment.sequelize.col('amount'), 'DECIMAL')), 'total']
             ],
             group: ['paymentMethod'],
             raw: true

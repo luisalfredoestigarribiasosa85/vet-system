@@ -22,18 +22,18 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
         {/* Modal */}
         <div className={`inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full ${sizes[size]}`}>
           {/* Header */}
-          <div className="bg-white px-6 py-4 border-b flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+          <div className="bg-white px-4 sm:px-6 py-4 border-b flex items-center justify-between">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 pr-2">{title}</h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition"
+              className="text-gray-400 hover:text-gray-600 transition flex-shrink-0"
             >
               <X size={24} />
             </button>
           </div>
 
           {/* Content */}
-          <div className="bg-white px-6 py-4">
+          <div className="bg-white px-4 sm:px-6 py-4 max-h-[calc(100vh-200px)] overflow-y-auto">
             {children}
           </div>
         </div>

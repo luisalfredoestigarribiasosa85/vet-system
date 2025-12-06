@@ -8,6 +8,23 @@ import Modal from '../../components/common/Modal';
 import Input from '../../components/common/Input';
 import usePortalAuth from '../../hooks/usePortalAuth';
 
+// Hook para detectar tamaño de pantalla
+const useMediaQuery = (query) => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    const listener = () => setMatches(media.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
+
+  return matches;
+};
+
 const DEFAULT_FORM = {
   petId: '',
   vetId: '',
@@ -35,8 +52,12 @@ const PortalAppointments = () => {
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Detectar si es pantalla grande (md breakpoint de Tailwind = 768px)
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -244,73 +265,136 @@ const PortalAppointments = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-800">Mis citas</h2>
-        <Button icon={CalendarPlus} onClick={openCreateModal}>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-800">Mis citas</h2>
+        <Button icon={CalendarPlus} onClick={openCreateModal} className="w-full sm:w-auto">
           Nueva cita
         </Button>
       </div>
 
       {appointments.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow p-6 text-slate-500">
+        <div className="bg-white rounded-2xl shadow p-4 sm:p-6 text-slate-500 text-center">
           Aun no tienes citas programadas.
         </div>
-      ) : (
+      ) : isDesktop ? (
+        /* Vista de tabla para desktop */
         <div className="bg-white rounded-2xl shadow overflow-hidden">
-          <table className="min-w-full">
-            <thead className="bg-slate-100">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Hora</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Mascota</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Veterinario</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {appointments.map((appointment) => {
-                const canModify = appointment.status === 'programada';
-                return (
-                  <tr key={appointment.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-sm text-slate-700">{appointment.date}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{appointment.time?.slice(0, 5)}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{appointment.pet?.name || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{appointment.veterinarian?.name || '-'}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700 capitalize">
-                        {appointment.status || 'programada'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          icon={Pencil}
-                          onClick={() => openEditModal(appointment)}
-                          disabled={!canModify}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          icon={Trash2}
-                          onClick={() => handleCancelAppointment(appointment)}
-                          disabled={!canModify}
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Fecha</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Hora</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Mascota</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Veterinario</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {appointments.map((appointment) => {
+                  const canModify = appointment.status === 'programada';
+                  return (
+                    <tr key={appointment.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 text-sm text-slate-700">{appointment.date}</td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{appointment.time?.slice(0, 5)}</td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{appointment.pet?.name || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{appointment.veterinarian?.name || '-'}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700 capitalize">
+                          {appointment.status || 'programada'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={Pencil}
+                            onClick={() => openEditModal(appointment)}
+                            disabled={!canModify}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => handleCancelAppointment(appointment)}
+                            disabled={!canModify}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
+      ) : (
+        /* Vista de tarjetas para móvil */
+        <div className="space-y-4">
+            {appointments.map((appointment) => {
+              const canModify = appointment.status === 'programada';
+              return (
+                <div key={appointment.id} className="bg-white rounded-2xl shadow p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700 capitalize font-medium">
+                          {appointment.status || 'programada'}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-500 w-20">Fecha:</span>
+                          <span className="text-sm text-slate-700 font-medium">{appointment.date}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-500 w-20">Hora:</span>
+                          <span className="text-sm text-slate-700 font-medium">{appointment.time?.slice(0, 5)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-500 w-20">Mascota:</span>
+                          <span className="text-sm text-slate-700">{appointment.pet?.name || '-'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-500 w-20">Veterinario:</span>
+                          <span className="text-sm text-slate-700">{appointment.veterinarian?.name || '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2 border-t border-slate-100">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={Pencil}
+                      onClick={() => openEditModal(appointment)}
+                      disabled={!canModify}
+                      className="flex-1"
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon={Trash2}
+                      onClick={() => handleCancelAppointment(appointment)}
+                      disabled={!canModify}
+                      className="flex-1"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
       )}
 
       <Modal
@@ -320,7 +404,7 @@ const PortalAppointments = () => {
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1">Mascota *</label>
               <select
@@ -402,7 +486,7 @@ const PortalAppointments = () => {
                   Selecciona veterinario, fecha y duracion para ver horarios.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {availabilitySlots.map((slot) => {
                     const isSelected = form.time === slot.start;
                     return (
@@ -439,11 +523,11 @@ const PortalAppointments = () => {
             />
           </div>
 
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="secondary" onClick={closeModal} disabled={submitting}>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
+            <Button type="button" variant="secondary" onClick={closeModal} disabled={submitting} className="w-full sm:w-auto">
               Cerrar
             </Button>
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
               {submitting ? 'Guardando...' : editing ? 'Actualizar cita' : 'Confirmar cita'}
             </Button>
           </div>

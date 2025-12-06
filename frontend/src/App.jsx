@@ -21,6 +21,8 @@ import PortalPets from './pages/portal/PortalPets';
 import PortalPetDetails from './pages/portal/PortalPetDetails';
 import PortalPlans from './pages/portal/PortalPlans';
 import Vaccinations from './pages/Vaccinations';
+import Onboarding from './pages/Onboarding';
+import Subscription from './pages/Subscription';
 
 function App() {
   return (
@@ -65,6 +67,7 @@ function App() {
           <Route path="invoices" element={<Invoices />} />
           <Route path="plans" element={<Plans />} />
           <Route path="payments" element={<Payments />} />
+          <Route path="subscription" element={<Subscription />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -43,17 +43,17 @@ const getRevenueStats = async (req, res) => {
 
         const revenue = await Invoice.findAll({
             where: {
-                date: {
+                issueDate: {
                     [Op.gte]: sixMonthsAgo,
                 },
                 status: 'pagado',
             },
             attributes: [
-                [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('date')), 'month'],
+                [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('issueDate')), 'month'],
                 [sequelize.fn('SUM', sequelize.col('total')), 'total'],
             ],
             group: ['month'],
-            order: [[sequelize.fn('DATE_TRUNC', 'month', sequelize.col('date')), 'ASC']],
+            order: [[sequelize.fn('DATE_TRUNC', 'month', sequelize.col('issueDate')), 'ASC']],
             raw: true,
         });
 
@@ -127,7 +127,7 @@ const getOverviewStats = async (req, res) => {
         // Ingresos del mes
         const revenueThisMonth = await Invoice.sum('total', {
             where: {
-                date: {
+                issueDate: {
                     [Op.gte]: firstDayOfMonth,
                 },
                 status: 'pagado',

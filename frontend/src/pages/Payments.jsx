@@ -16,19 +16,17 @@ import {
 import {
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer
 } from 'recharts';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import Loader from '../components/common/Loader';
+import CreateInvoiceModal from '../components/payments/CreateInvoiceModal';
+import RegisterPaymentModal from '../components/payments/RegisterPaymentModal';
 
 const COLORS = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#65a30d'];
 
@@ -63,10 +61,6 @@ const Payments = () => {
     loadData();
   }, []);
 
-  useEffect(() => {
-    filterInvoices();
-  }, [searchTerm, statusFilter, invoices]);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -84,7 +78,7 @@ const Payments = () => {
     }
   };
 
-  const filterInvoices = () => {
+  useEffect(() => {
     let filtered = invoices;
 
     if (statusFilter !== 'all') {
@@ -100,30 +94,54 @@ const Payments = () => {
     }
 
     setFilteredInvoices(filtered);
-  };
+  }, [searchTerm, statusFilter, invoices]);
 
   const formatCurrency = (amount) => {
     return `Gs. ${parseInt(amount || 0).toLocaleString('es-PY')}`;
   };
 
-  const handleDownloadPDF = async (invoiceId) => {
+  const processPaymentMethodsData = (paymentsByMethod) => {
+    if (!paymentsByMethod || !Array.isArray(paymentsByMethod)) return [];
+
+    return paymentsByMethod
+      .map(item => ({
+        ...item,
+        total: parseFloat(item.total) || 0,
+        paymentMethod: item.paymentMethod || item.payment_method
+      }))
+      .filter(item => item.total > 0);
+  };
+
+  const handleDownloadPDF = (invoiceId) => {
     try {
-      const response = await api.get(`/invoices/${invoiceId}/pdf`, {
-        responseType: 'blob'
-      });
+      const token = localStorage.getItem('token');
+      let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `factura-${invoiceId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      // Limpiar baseUrl para evitar duplicados
+      if (baseUrl.endsWith('/api')) {
+        baseUrl = baseUrl.slice(0, -4);
+      }
+      if (baseUrl.endsWith('/')) {
+        baseUrl = baseUrl.slice(0, -1);
+      }
 
-      toast.success('Factura descargada');
+      const url = `${baseUrl}/api/invoices/${invoiceId}/pdf?token=${token}`;
+
+      // Usar iframe oculto para descargar sin abrir nueva pestaña
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+
+      // Limpiar iframe después de un tiempo prudente
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 5000);
+
+      toast.success('Descargando factura...');
     } catch (error) {
-      console.error('Error al descargar PDF:', error);
-      toast.error('Error al descargar factura');
+      console.error('Error:', error);
+      toast.error('Error al abrir factura');
     }
   };
 
@@ -199,30 +217,59 @@ const Payments = () => {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Payment Methods Chart */}
+        {/* Payment Methods */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Métodos de Pago</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={stats?.paymentsByMethod || []}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ paymentMethod, percent }) =>
-                  `${PAYMENT_METHODS[paymentMethod]} ${(percent * 100).toFixed(0)}%`
-                }
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="total"
-              >
-                {(stats?.paymentsByMethod || []).map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => formatCurrency(value)} />
-            </PieChart>
-          </ResponsiveContainer>
+          {(() => {
+            const processedData = processPaymentMethodsData(stats?.paymentsByMethod);
+            const totalAmount = processedData.reduce((sum, item) => sum + item.total, 0);
+
+            if (processedData.length === 0) {
+              return (
+                <div className="flex items-center justify-center h-40 text-gray-500">
+                  <div className="text-center">
+                    <p>No hay datos de pagos para mostrar</p>
+                    <p className="text-sm mt-1">Registra pagos para ver estadísticas</p>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div className="space-y-3">
+                {processedData.map((item, index) => {
+                  const percentage = totalAmount > 0 ? ((item.total / totalAmount) * 100) : 0;
+                  return (
+                    <div key={item.paymentMethod} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        ></div>
+                        <span className="text-sm font-medium text-gray-700">
+                          {PAYMENT_METHODS[item.paymentMethod] || item.paymentMethod}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-gray-600">
+                          {formatCurrency(item.total)} ({percentage.toFixed(1)}%)
+                        </span>
+                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="h-2 rounded-full transition-all duration-300"
+                            style={{
+                              width: `${percentage}%`,
+                              backgroundColor: COLORS[index % COLORS.length]
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Status Distribution */}
@@ -356,8 +403,19 @@ const Payments = () => {
         </div>
       </div>
 
-      {/* TODO: Modals for Create Invoice and Register Payment */}
-      {/* These will be implemented in the next step */}
+      {/* Modals */}
+      <CreateInvoiceModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={loadData}
+      />
+
+      <RegisterPaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        invoice={selectedInvoice}
+        onSuccess={loadData}
+      />
     </div>
   );
 };

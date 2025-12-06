@@ -50,6 +50,8 @@ app.use('/api/portal', require('./routes/portal'));
 app.use('/api/medical', require('./routes/medicalRecords'));
 app.use('/api/vaccinations', require('./routes/vaccinations'));
 app.use('/api/stats', require('./routes/stats'));
+app.use('/api/organizations', require('./routes/organizations'));
+app.use('/api/subscriptions', require('./routes/subscriptions'));
 
 // Ruta de bienvenida
 app.get('/', (req, res) => {
@@ -67,6 +69,8 @@ app.get('/', (req, res) => {
       plans: '/api/plans',
       payments: '/api/payments',
       portal: '/api/portal',
+      organizations: '/api/organizations',
+      subscriptions: '/api/subscriptions',
       vaccinations: '/api/vaccinations',
       stats: '/api/stats'
     }

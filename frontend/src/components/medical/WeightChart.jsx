@@ -25,13 +25,16 @@ const WeightChart = ({ records }) => {
     const avgWeight = weightData.reduce((sum, d) => sum + d.weight, 0) / weightData.length;
 
     return (
-        <div className="bg-white rounded-xl shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Evolución de Peso</h3>
-            <ResponsiveContainer width="100%" height={300}>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-5 pb-3 border-b border-gray-200">Evolución de Peso</h3>
+            <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
                 <LineChart data={weightData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis label={{ value: 'Peso (kg)', angle: -90, position: 'insideLeft' }} />
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                    <YAxis 
+                        label={{ value: 'Peso (kg)', angle: -90, position: 'insideLeft' }}
+                        tick={{ fontSize: 12 }}
+                    />
                     <Tooltip
                         formatter={(value) => [`${value} kg`, 'Peso']}
                         labelFormatter={(label) => `Fecha: ${label}`}
@@ -52,7 +55,7 @@ const WeightChart = ({ records }) => {
                     />
                 </LineChart>
             </ResponsiveContainer>
-            <div className="mt-4 flex justify-between text-sm text-gray-600">
+            <div className="mt-4 flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-0 text-xs sm:text-sm text-gray-600">
                 <div>
                     <span className="font-medium">Peso actual:</span> {weightData[weightData.length - 1].weight} kg
                 </div>

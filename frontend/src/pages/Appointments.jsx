@@ -7,6 +7,23 @@ import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
 import Input from '../components/common/Input';
 
+// Hook para detectar tamaño de pantalla
+const useMediaQuery = (query) => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    const listener = () => setMatches(media.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
+
+  return matches;
+};
+
 const DEFAULT_FORM = {
   petId: '',
   vetId: '',
@@ -34,6 +51,9 @@ const Appointments = () => {
   const [availabilityMeta, setAvailabilityMeta] = useState(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Detectar si es pantalla grande (md breakpoint de Tailwind = 768px)
+  const isDesktop = useMediaQuery('(min-width: 768px)');
 
   useEffect(() => {
     loadInitialData();
@@ -253,13 +273,13 @@ const Appointments = () => {
   if (loading) return <Loader fullScreen />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Citas</h1>
-          <p className="text-sm text-gray-500">Gestiona la agenda diaria, verifica disponibilidad y crea nuevas citas.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Citas</h1>
+          <p className="text-xs sm:text-sm text-gray-500">Gestiona la agenda diaria, verifica disponibilidad y crea nuevas citas.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Button
             variant="secondary"
             icon={RefreshCw}
@@ -269,83 +289,157 @@ const Appointments = () => {
               setRefreshing(false);
             }}
             disabled={refreshing}
+            className="w-full sm:w-auto"
           >
             {refreshing ? 'Actualizando...' : 'Actualizar'}
           </Button>
-          <Button icon={CalendarPlus} onClick={openCreateModal}>
+          <Button icon={CalendarPlus} onClick={openCreateModal} className="w-full sm:w-auto">
             Nueva cita
           </Button>
         </div>
       </div>
 
       {appointments.length === 0 ? (
-        <div className="bg-white rounded-xl shadow p-6 text-gray-600">
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6 text-gray-600 text-center">
           No hay citas para mostrar aun.
         </div>
-      ) : (
+      ) : isDesktop ? (
+        /* Vista de tabla para desktop */
         <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="min-w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Fecha</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Inicio</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Fin</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Duracion</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Mascota</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Dueno</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Veterinario</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Estado</th>
-                <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {appointments.map((appointment) => {
-                const canModify = appointment.status === 'programada';
-                return (
-                  <tr key={appointment.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.date}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.time?.slice(0, 5)}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.endTime?.slice(0, 5) || '-'}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.durationMinutes || 30} min</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.pet?.name || '-'}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.pet?.owner?.name || '-'}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{appointment.veterinarian?.name || '-'}</td>
-                    <td className="px-4 py-2 text-sm">
-                      <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 capitalize">{appointment.status || 'programada'}</span>
-                    </td>
-                    <td className="px-4 py-2 text-sm text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          icon={Pencil}
-                          onClick={() => openEditModal(appointment)}
-                          disabled={!canModify}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          icon={Trash2}
-                          onClick={() => handleCancelAppointment(appointment)}
-                          disabled={!canModify}
-                        >
-                          Cancelar
-                        </Button>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Fecha</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Inicio</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Fin</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Duracion</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Mascota</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Dueno</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Veterinario</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Estado</th>
+                  <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {appointments.map((appointment) => {
+                  const canModify = appointment.status === 'programada';
+                  return (
+                    <tr key={appointment.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 text-sm text-gray-700">{appointment.date}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{appointment.time?.slice(0, 5)}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{appointment.endTime?.slice(0, 5) || '-'}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{appointment.durationMinutes || 30} min</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{appointment.pet?.name || '-'}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{appointment.pet?.owner?.name || '-'}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{appointment.veterinarian?.name || '-'}</td>
+                      <td className="px-4 py-2 text-sm">
+                        <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 capitalize">{appointment.status || 'programada'}</span>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={Pencil}
+                            onClick={() => openEditModal(appointment)}
+                            disabled={!canModify}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => handleCancelAppointment(appointment)}
+                            disabled={!canModify}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        /* Vista de tarjetas para móvil */
+        <div className="space-y-4">
+          {appointments.map((appointment) => {
+            const canModify = appointment.status === 'programada';
+            return (
+              <div key={appointment.id} className="bg-white rounded-xl shadow p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700 capitalize font-medium">
+                        {appointment.status || 'programada'}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500 w-24 flex-shrink-0">Fecha:</span>
+                        <span className="text-sm text-gray-700 font-medium">{appointment.date}</span>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500 w-24 flex-shrink-0">Horario:</span>
+                        <span className="text-sm text-gray-700 font-medium">
+                          {appointment.time?.slice(0, 5)} - {appointment.endTime?.slice(0, 5) || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500 w-24 flex-shrink-0">Duración:</span>
+                        <span className="text-sm text-gray-700">{appointment.durationMinutes || 30} min</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500 w-24 flex-shrink-0">Mascota:</span>
+                        <span className="text-sm text-gray-700">{appointment.pet?.name || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500 w-24 flex-shrink-0">Dueño:</span>
+                        <span className="text-sm text-gray-700">{appointment.pet?.owner?.name || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500 w-24 flex-shrink-0">Veterinario:</span>
+                        <span className="text-sm text-gray-700">{appointment.veterinarian?.name || '-'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-gray-100">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={Pencil}
+                    onClick={() => openEditModal(appointment)}
+                    disabled={!canModify}
+                    className="flex-1"
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    icon={Trash2}
+                    onClick={() => handleCancelAppointment(appointment)}
+                    disabled={!canModify}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       <Modal isOpen={isModalOpen} onClose={closeModal} title={editing ? 'Editar cita' : 'Programar nueva cita'} size="lg">
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mascota *</label>
               <select
@@ -427,7 +521,7 @@ const Appointments = () => {
                   Selecciona veterinario, fecha y duracion para ver horarios disponibles.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {availabilitySlots.map((slot) => {
                     const isSelected = form.time === slot.start;
                     return (
@@ -469,11 +563,11 @@ const Appointments = () => {
             />
           </div>
 
-          <div className="mt-6 flex justify-end gap-3">
-            <Button type="button" variant="secondary" onClick={closeModal} disabled={submitting}>
+          <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
+            <Button type="button" variant="secondary" onClick={closeModal} disabled={submitting} className="w-full sm:w-auto">
               Cerrar
             </Button>
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
               {submitting ? 'Guardando...' : editing ? 'Actualizar cita' : 'Guardar cita'}
             </Button>
           </div>

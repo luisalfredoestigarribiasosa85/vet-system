@@ -8,6 +8,7 @@ import {
   Stethoscope,
   Package,
   DollarSign,
+  CreditCard,
   LogOut,
   Menu,
   X,
@@ -28,6 +29,7 @@ const Sidebar = () => {
     { path: '/inventory', icon: Package, label: 'Inventario' },
     { path: '/invoices', icon: DollarSign, label: 'Facturación' },
     { path: '/payments', icon: DollarSign, label: 'Pagos' },
+    { path: '/subscription', icon: CreditCard, label: 'Suscripción' },
   ];
 
   return (
