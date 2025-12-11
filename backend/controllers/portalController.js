@@ -44,6 +44,10 @@ exports.registerClient = async (req, res) => {
       return res.status(400).json({ message: 'Nombre, email y password son obligatorios' });
     }
 
+    if (!phone) {
+      return res.status(400).json({ message: 'El teléfono es obligatorio' });
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
     const username = normalizedEmail;
 
@@ -68,7 +72,7 @@ exports.registerClient = async (req, res) => {
         await existingUser.client.update({
           name: name.trim(),
           email: normalizedEmail,
-          phone: phone ? phone.trim() : existingUser.client.phone,
+          phone: phone.trim(),
         });
       }
 
@@ -81,19 +85,32 @@ exports.registerClient = async (req, res) => {
       });
     }
 
+    // Obtener la primera organización activa (para clientes del portal)
+    const { Organization } = models;
+    const defaultOrg = await Organization.findOne({
+      where: { isActive: true },
+      order: [['createdAt', 'ASC']],
+    });
+
+    if (!defaultOrg) {
+      return res.status(500).json({ message: 'No hay organizaciones disponibles. Contacte al administrador.' });
+    }
+
     const user = await User.create({
       name: name.trim(),
       username,
       email: normalizedEmail,
       password,
       role: 'cliente',
+      organizationId: defaultOrg.id,
     });
 
     const client = await Client.create({
       name: name.trim(),
       email: normalizedEmail,
-      phone: phone ? phone.trim() : null,
+      phone: phone.trim(),
       userId: user.id,
+      organizationId: defaultOrg.id,
       isActive: true,
     });
 
@@ -104,8 +121,8 @@ exports.registerClient = async (req, res) => {
       user: sanitizeUser(user, client),
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al registrar cliente' });
+    console.error('Error en registerClient:', error);
+    res.status(500).json({ message: 'Error al registrar cliente', error: error.message });
   }
 };
 
