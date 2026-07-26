@@ -10,10 +10,6 @@ const Client = sequelize.define('Client', {
   organizationId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: {
-      model: 'organizations',
-      key: 'id'
-    },
     comment: 'Organización a la que pertenece el cliente'
   },
   userId: {

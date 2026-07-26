@@ -299,7 +299,7 @@ const Appointments = () => {
         </div>
       </div>
 
-      {appointments.length === 0 ? (
+      {(!Array.isArray(appointments) || appointments.length === 0) ? (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6 text-gray-600 text-center">
           No hay citas para mostrar aun.
         </div>
@@ -322,7 +322,7 @@ const Appointments = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {appointments.map((appointment) => {
+                {(Array.isArray(appointments) ? appointments : []).map((appointment) => {
                   const canModify = appointment.status === 'programada';
                   return (
                     <tr key={appointment.id} className="hover:bg-gray-50">
@@ -368,7 +368,7 @@ const Appointments = () => {
       ) : (
         /* Vista de tarjetas para móvil */
         <div className="space-y-4">
-          {appointments.map((appointment) => {
+          {(Array.isArray(appointments) ? appointments : []).map((appointment) => {
             const canModify = appointment.status === 'programada';
             return (
               <div key={appointment.id} className="bg-white rounded-xl shadow p-4 space-y-3">
@@ -448,7 +448,7 @@ const Appointments = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Selecciona una mascota</option>
-                {pets.map((pet) => (
+                {(Array.isArray(pets) ? pets : []).map((pet) => (
                   <option key={pet.id} value={pet.id}>
                     {pet.name} ({pet.species})
                   </option>
@@ -464,7 +464,7 @@ const Appointments = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Selecciona un profesional</option>
-                {veterinarians.map((vet) => (
+                {(Array.isArray(veterinarians) ? veterinarians : []).map((vet) => (
                   <option key={vet.id} value={vet.id}>
                     {vet.name}
                   </option>
@@ -522,7 +522,7 @@ const Appointments = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {availabilitySlots.map((slot) => {
+                  {(Array.isArray(availabilitySlots) ? availabilitySlots : []).map((slot) => {
                     const isSelected = form.time === slot.start;
                     return (
                       <button

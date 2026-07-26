@@ -79,7 +79,8 @@ const Payments = () => {
   };
 
   useEffect(() => {
-    let filtered = invoices;
+    const invoicesList = Array.isArray(invoices) ? invoices : [];
+    let filtered = invoicesList;
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter(inv => inv.status === statusFilter);

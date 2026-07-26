@@ -63,11 +63,11 @@ User.hasMany(Payment, { foreignKey: 'processedBy', as: 'processedPayments' });
 Payment.belongsTo(User, { foreignKey: 'processedBy', as: 'processor' });
 
 // SaaS Relationships
-Organization.hasMany(User, { foreignKey: 'organizationId', as: 'users' });
-User.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasMany(User, { foreignKey: 'organizationId', as: 'users', constraints: false });
+User.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization', constraints: false });
 
-Organization.hasOne(Subscription, { foreignKey: 'organizationId', as: 'subscription' });
-Subscription.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasOne(Subscription, { foreignKey: 'organizationId', as: 'subscription', constraints: false });
+Subscription.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization', constraints: false });
 
 Plan.hasMany(Subscription, { foreignKey: 'planId', as: 'subscriptions' });
 Subscription.belongsTo(Plan, { foreignKey: 'planId', as: 'plan' });
@@ -75,32 +75,32 @@ Subscription.belongsTo(Plan, { foreignKey: 'planId', as: 'plan' });
 User.hasMany(User, { foreignKey: 'invitedBy', as: 'invitedUsers' });
 User.belongsTo(User, { foreignKey: 'invitedBy', as: 'inviter' });
 
-Organization.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+Organization.belongsTo(User, { foreignKey: 'createdBy', as: 'creator', constraints: false });
 
 // Multi-tenant data relationships (todas las entidades ahora pertenecen a una organización)
-Organization.hasMany(Client, { foreignKey: 'organizationId', as: 'clients' });
-Client.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasMany(Client, { foreignKey: 'organizationId', as: 'clients', constraints: false });
+Client.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization', constraints: false });
 
-Organization.hasMany(Pet, { foreignKey: 'organizationId', as: 'pets' });
-Pet.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasMany(Pet, { foreignKey: 'organizationId', as: 'pets', constraints: false });
+Pet.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization', constraints: false });
 
-Organization.hasMany(Appointment, { foreignKey: 'organizationId', as: 'appointments' });
-Appointment.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasMany(Appointment, { foreignKey: 'organizationId', as: 'appointments', constraints: false });
+Appointment.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization', constraints: false });
 
-Organization.hasMany(MedicalRecord, { foreignKey: 'organizationId', as: 'medicalRecords' });
-MedicalRecord.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasMany(MedicalRecord, { foreignKey: 'organizationId', as: 'medicalRecords', constraints: false });
+MedicalRecord.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization', constraints: false });
 
-Organization.hasMany(Inventory, { foreignKey: 'organizationId', as: 'inventory' });
-Inventory.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasMany(Inventory, { foreignKey: 'organizationId', as: 'inventory', constraints: false });
+Inventory.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization', constraints: false });
 
-Organization.hasMany(Invoice, { foreignKey: 'organizationId', as: 'invoices' });
-Invoice.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasMany(Invoice, { foreignKey: 'organizationId', as: 'invoices', constraints: false });
+Invoice.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization', constraints: false });
 
-Organization.hasMany(Service, { foreignKey: 'organizationId', as: 'services' });
-Service.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasMany(Service, { foreignKey: 'organizationId', as: 'services', constraints: false });
+Service.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization', constraints: false });
 
-Organization.hasMany(Vaccination, { foreignKey: 'organizationId', as: 'vaccinations' });
-Vaccination.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasMany(Vaccination, { foreignKey: 'organizationId', as: 'vaccinations', constraints: false });
+Vaccination.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization', constraints: false });
 
 module.exports = {
   sequelize,

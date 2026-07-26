@@ -2,8 +2,11 @@ import PropTypes from 'prop-types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 const RevenueChart = ({ data }) => {
+    // Asegurar que data sea un array antes de procesarlo
+    const revenueData = Array.isArray(data) ? data : [];
+    
     // Transformar datos para el gráfico
-    const chartData = data.map(item => ({
+    const chartData = revenueData.map(item => ({
         month: new Date(item.month).toLocaleDateString('es-PY', { month: 'short', year: 'numeric' }),
         total: parseFloat(item.total),
     }));

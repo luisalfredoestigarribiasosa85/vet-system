@@ -87,7 +87,7 @@ const Clients = () => {
     setFormData({ name: '', phone: '', email: '', address: '' });
   };
 
-  const filteredClients = clients.filter(client =>
+  const filteredClients = (Array.isArray(clients) ? clients : []).filter(client =>
     matchSearch(client, searchTerm, ['name', 'email'])
   );
 

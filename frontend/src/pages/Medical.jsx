@@ -65,7 +65,8 @@ const Medical = () => {
 
   // Formatear datos para el gráfico de tendencias
   const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  const trendData = stats.monthlyTrends.map(item => ({
+  const monthlyTrends = Array.isArray(stats?.monthlyTrends) ? stats.monthlyTrends : [];
+  const trendData = monthlyTrends.map(item => ({
     name: monthNames[parseInt(item.month.split('-')[1]) - 1],
     consultas: item.count
   }));
@@ -84,7 +85,7 @@ const Medical = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium">Total Registros</p>
-              <p className="text-3xl font-bold mt-2">{stats.totalRecords}</p>
+              <p className="text-3xl font-bold mt-2">{stats?.totalRecords ?? 0}</p>
             </div>
             <div className="bg-white bg-opacity-20 rounded-lg p-3">
               <FileText size={28} />
@@ -96,7 +97,7 @@ const Medical = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm font-medium">Este Mes</p>
-              <p className="text-3xl font-bold mt-2">{stats.recordsThisMonth}</p>
+              <p className="text-3xl font-bold mt-2">{stats?.recordsThisMonth ?? 0}</p>
             </div>
             <div className="bg-white bg-opacity-20 rounded-lg p-3">
               <Calendar size={28} />
@@ -108,7 +109,7 @@ const Medical = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-pink-100 text-sm font-medium">Diagnósticos</p>
-              <p className="text-3xl font-bold mt-2">{stats.commonDiagnoses.length}</p>
+              <p className="text-3xl font-bold mt-2">{(stats?.commonDiagnoses || []).length}</p>
               <p className="text-pink-100 text-xs mt-1">más comunes</p>
             </div>
             <div className="bg-white bg-opacity-20 rounded-lg p-3">
@@ -121,7 +122,7 @@ const Medical = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-orange-100 text-sm font-medium">Especies</p>
-              <p className="text-3xl font-bold mt-2">{stats.recordsBySpecies.length}</p>
+              <p className="text-3xl font-bold mt-2">{(stats?.recordsBySpecies || []).length}</p>
               <p className="text-orange-100 text-xs mt-1">atendidas</p>
             </div>
             <div className="bg-white bg-opacity-20 rounded-lg p-3">
@@ -159,7 +160,7 @@ const Medical = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Diagnósticos Más Comunes</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={stats.commonDiagnoses}>
+              <BarChart data={stats?.commonDiagnoses || []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
               <YAxis />
@@ -175,9 +176,9 @@ const Medical = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Distribución por Especie</h2>
           <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
+              <PieChart>
               <Pie
-                data={stats.recordsBySpecies}
+                data={stats?.recordsBySpecies || []}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -186,7 +187,7 @@ const Medical = () => {
                 fill="#8884d8"
                 dataKey="count"
               >
-                {stats.recordsBySpecies.map((entry, index) => (
+                {(stats?.recordsBySpecies || []).map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -210,7 +211,7 @@ const Medical = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {stats.recentRecords.map((record) => (
+                {(stats?.recentRecords || []).map((record) => (
                   <tr key={record.id} className="hover:bg-gray-50 transition">
                     <td className="px-4 py-3 text-sm text-gray-700">
                       {new Date(record.createdAt).toLocaleDateString('es-PY')}

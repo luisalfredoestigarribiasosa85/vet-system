@@ -141,10 +141,11 @@ const Inventory = () => {
       </div>
 
       {(() => {
+        const itemsList = Array.isArray(items) ? items : [];
         const q = searchTerm.toLowerCase().trim();
         const filtered = !q
-          ? items
-          : items.filter((it) => {
+          ? itemsList
+          : itemsList.filter((it) => {
             const name = (it.name || '').toLowerCase();
             const category = (it.category || '').toLowerCase();
             const supplier = (it.supplier || '').toLowerCase();

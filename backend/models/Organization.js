@@ -71,10 +71,6 @@ const Organization = sequelize.define('Organization', {
     createdBy: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        references: {
-            model: 'users',
-            key: 'id'
-        },
         comment: 'Usuario que creó la organización'
     }
 }, {

@@ -16,7 +16,8 @@ const Invoices = () => {
   }, []);
 
   useEffect(() => {
-    let filtered = invoices;
+    const invoicesList = Array.isArray(invoices) ? invoices : [];
+    let filtered = invoicesList;
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter(inv => inv.status === statusFilter);
@@ -116,7 +117,7 @@ const Invoices = () => {
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-gray-800">
-            {formatCurrency(invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0))}
+            {formatCurrency((Array.isArray(invoices) ? invoices : []).reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0))}
           </div>
           <div className="text-sm text-gray-500">Total facturado</div>
         </div>

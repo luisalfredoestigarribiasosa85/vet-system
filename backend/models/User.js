@@ -32,10 +32,6 @@ const User = sequelize.define('User', {
   organizationId: {
     type: DataTypes.INTEGER,
     allowNull: true,
-    references: {
-      model: 'organizations',
-      key: 'id'
-    },
     comment: 'Organización a la que pertenece el usuario'
   },
   role: {

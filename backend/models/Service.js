@@ -25,8 +25,7 @@ const Service = sequelize.define('Service', {
     category: {
         type: DataTypes.ENUM('consulta', 'vacuna', 'cirugia', 'laboratorio', 'medicamento', 'otro'),
         allowNull: false,
-        defaultValue: 'consulta',
-        comment: 'Categoría del servicio'
+        defaultValue: 'consulta'
     },
     isActive: {
         type: DataTypes.BOOLEAN,

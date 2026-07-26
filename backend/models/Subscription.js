@@ -10,10 +10,6 @@ const Subscription = sequelize.define('Subscription', {
     organizationId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        references: {
-            model: 'organizations',
-            key: 'id'
-        },
         comment: 'Organización suscrita'
     },
     planId: {

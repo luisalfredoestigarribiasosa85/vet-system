@@ -2,8 +2,11 @@ import PropTypes from 'prop-types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const VaccinationsChart = ({ data }) => {
+    // Asegurar que data sea un array antes de procesarlo
+    const vaccinationsData = Array.isArray(data) ? data : [];
+    
     // Transformar datos para el gráfico
-    const chartData = data.map(item => ({
+    const chartData = vaccinationsData.map(item => ({
         name: item.status === 'aplicada' ? 'Aplicadas' :
             item.status === 'próxima' ? 'Próximas' : 'Vencidas',
         value: parseInt(item.count),

@@ -1,21 +1,72 @@
 require('dotenv').config();
 const { sequelize } = require('../config/database');
-const User = require('../models/User');
-const Client = require('../models/Client');
-const Pet = require('../models/Pet');
-const Plan = require('../models/Plan');
-const Inventory = require('../models/Inventory');
-const Vaccination = require('../models/Vaccination');
-const MedicalRecord = require('../models/MedicalRecord');
+const { Client: PgClient } = require('pg');
+const {
+  User,
+  Client,
+  Pet,
+  Plan,
+  Inventory,
+  Vaccination,
+  MedicalRecord,
+  Organization,
+} = require('../models');
 
+const createDatabaseIfMissing = async () => {
+  const { database, username, password, host, port } = sequelize.config;
+
+  if (!database || !username || !password || !host) {
+    throw new Error(
+      'Faltan credenciales de base de datos para crear la base automáticamente. ' +
+      'Revisa backend/.env.'
+    );
+  }
+
+  const adminClient = new PgClient({
+    host,
+    port: port ? Number(port) : 5432,
+    user: username,
+    password,
+    database: 'postgres'
+  });
+
+  await adminClient.connect();
+
+  try {
+    const databaseExists = await adminClient.query(
+      'SELECT 1 FROM pg_database WHERE datname = $1',
+      [database]
+    );
+
+    if (databaseExists.rowCount === 0) {
+      const safeDatabaseName = database.replace(/"/g, '""');
+      await adminClient.query(`CREATE DATABASE "${safeDatabaseName}"`);
+      console.log(`🗄️  Base de datos "${database}" creada correctamente`);
+    }
+  } finally {
+    await adminClient.end();
+  }
+};
 
 const seedDatabase = async () => {
   try {
     console.log('🌱 Iniciando seed de base de datos...');
 
+    await createDatabaseIfMissing();
+
     // Limpiar base de datos
     await sequelize.sync({ force: true });
     console.log('✅ Base de datos sincronizada');
+
+    // Crear organización base
+    const organization = await Organization.create({
+      name: 'Veterinaria Demo',
+      subdomain: 'veterinaria-demo',
+      description: 'Organización de demostración para la base inicial',
+      isActive: true,
+    });
+
+    console.log('🏢 Organización base creada');
 
     // Crear usuarios
     const users = await User.bulkCreate([
@@ -24,28 +75,34 @@ const seedDatabase = async () => {
         password: 'admin123',
         name: 'Administrador',
         email: 'admin@veterinaria.com',
-        role: 'admin'
+        role: 'admin',
+        organizationId: organization.id,
+        organizationRole: 'owner',
+        isOwner: true
       },
       {
         username: 'drcarlos',
         password: 'vet123',
         name: 'Dr. Carlos Ramírez',
         email: 'carlos@veterinaria.com',
-        role: 'veterinario'
+        role: 'veterinario',
+        organizationId: organization.id
       },
       {
         username: 'draana',
         password: 'vet123',
         name: 'Dra. Ana Torres',
         email: 'ana@veterinaria.com',
-        role: 'veterinario'
+        role: 'veterinario',
+        organizationId: organization.id
       },
       {
         username: 'laura',
         password: 'recep123',
         name: 'Laura Martínez',
         email: 'laura@veterinaria.com',
-        role: 'recepcionista'
+        role: 'recepcionista',
+        organizationId: organization.id
       }
     ], { individualHooks: true });
 
@@ -54,18 +111,21 @@ const seedDatabase = async () => {
     // Crear clientes
     const clients = await Client.bulkCreate([
       {
+        organizationId: organization.id,
         name: 'Maria Gonzalez',
         phone: '0981-123456',
         email: 'maria@email.com',
         address: 'Av. España 1234, Asunción'
       },
       {
+        organizationId: organization.id,
         name: 'Juan Perez',
         phone: '0982-234567',
         email: 'juan@email.com',
         address: 'Mcal. López 567, Asunción'
       },
       {
+        organizationId: organization.id,
         name: 'Pedro Martinez',
         phone: '0983-345678',
         email: 'pedro@email.com',
@@ -79,6 +139,7 @@ const seedDatabase = async () => {
     const pets = await Pet.bulkCreate([
       {
         clientId: clients[0].id,
+        organizationId: organization.id,
         name: 'Max',
         species: 'Perro',
         breed: 'Golden Retriever',
@@ -94,6 +155,7 @@ const seedDatabase = async () => {
       },
       {
         clientId: clients[0].id,
+        organizationId: organization.id,
         name: 'Luna',
         species: 'Gato',
         breed: 'Siamés',
@@ -109,6 +171,7 @@ const seedDatabase = async () => {
       },
       {
         clientId: clients[1].id,
+        organizationId: organization.id,
         name: 'Rocky',
         species: 'Perro',
         breed: 'Bulldog',
@@ -124,6 +187,7 @@ const seedDatabase = async () => {
       },
       {
         clientId: clients[2].id,
+        organizationId: organization.id,
         name: 'Coco',
         species: 'Ave',
         breed: 'Loro Amazonico',
@@ -142,6 +206,7 @@ const seedDatabase = async () => {
       // Vacunas para Max (Perro Golden Retriever)
       {
         petId: pets[0].id,
+        organizationId: organization.id,
         vaccineName: 'Antirrábica',
         vaccineType: 'obligatoria',
         applicationDate: '2025-03-15',
@@ -156,6 +221,7 @@ const seedDatabase = async () => {
       },
       {
         petId: pets[0].id,
+        organizationId: organization.id,
         vaccineName: 'Parvovirus',
         vaccineType: 'obligatoria',
         applicationDate: '2025-02-10',
@@ -170,6 +236,7 @@ const seedDatabase = async () => {
       },
       {
         petId: pets[0].id,
+        organizationId: organization.id,
         vaccineName: 'Moquillo',
         vaccineType: 'obligatoria',
         applicationDate: '2025-02-10',
@@ -185,6 +252,7 @@ const seedDatabase = async () => {
       // Vacunas para Luna (Gato Siamés)
       {
         petId: pets[1].id,
+        organizationId: organization.id,
         vaccineName: 'Antirrábica',
         vaccineType: 'obligatoria',
         applicationDate: '2025-05-20',
@@ -199,6 +267,7 @@ const seedDatabase = async () => {
       },
       {
         petId: pets[1].id,
+        organizationId: organization.id,
         vaccineName: 'Triple Felina',
         vaccineType: 'obligatoria',
         applicationDate: '2025-05-20',
@@ -213,6 +282,7 @@ const seedDatabase = async () => {
       },
       {
         petId: pets[1].id,
+        organizationId: organization.id,
         vaccineName: 'Leucemia Felina',
         vaccineType: 'opcional',
         applicationDate: '2025-06-15',
@@ -228,6 +298,7 @@ const seedDatabase = async () => {
       // Vacunas para Rocky (Perro Bulldog) - Una vencida
       {
         petId: pets[2].id,
+        organizationId: organization.id,
         vaccineName: 'Antirrábica',
         vaccineType: 'obligatoria',
         applicationDate: '2024-11-10',
@@ -242,6 +313,7 @@ const seedDatabase = async () => {
       },
       {
         petId: pets[2].id,
+        organizationId: organization.id,
         vaccineName: 'Tos de las Perreras',
         vaccineType: 'opcional',
         applicationDate: '2025-01-15',

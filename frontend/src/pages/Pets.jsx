@@ -145,7 +145,7 @@ const Pets = () => {
       setSelectedPet(updatedPet);
 
       // Update the main pets list
-      setPets(prevPets => prevPets.map(p => p.id === updatedPet.id ? updatedPet : p));
+      setPets(prevPets => (Array.isArray(prevPets) ? prevPets : []).map(p => p.id === updatedPet.id ? updatedPet : p));
 
       // Clear the form
       setNewReminder({ type: '', date: '' });
@@ -156,7 +156,7 @@ const Pets = () => {
     }
   };
 
-  const filteredPets = pets.filter(pet => matchSearch(pet, searchTerm, ['name', 'breed']));
+  const filteredPets = (Array.isArray(pets) ? pets : []).filter(pet => matchSearch(pet, searchTerm, ['name', 'breed']));
 
   if (loading) return <Loader fullScreen />;
 
@@ -194,7 +194,7 @@ const Pets = () => {
                 <p><strong>Especie:</strong> {pet.species}</p>
                 <p><strong>Raza:</strong> {pet.breed}</p>
                 <p><strong>Edad:</strong> {pet.age} años</p>
-                <p><strong>Dueño:</strong> {clients.find(c => c.id === pet.clientId)?.name || 'No asignado'}</p>
+                <p><strong>Dueño:</strong> {(Array.isArray(clients) ? clients : []).find(c => c.id === pet.clientId)?.name || 'No asignado'}</p>
               </div>
               <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
                 <div className="flex gap-2 flex-1 sm:flex-initial">
@@ -248,7 +248,7 @@ const Pets = () => {
               <label htmlFor="clientId" className="block text-sm font-medium text-gray-700">Dueño</label>
               <select name="clientId" id="clientId" value={formData.clientId} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-green-500 focus:border-green-500">
                 <option value="">Seleccione un dueño</option>
-                {clients.map(client => (
+                {(Array.isArray(clients) ? clients : []).map(client => (
                   <option key={client.id} value={client.id}>{client.name}</option>
                 ))}
               </select>

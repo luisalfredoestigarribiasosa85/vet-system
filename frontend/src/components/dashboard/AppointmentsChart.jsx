@@ -2,8 +2,11 @@ import PropTypes from 'prop-types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const AppointmentsChart = ({ data }) => {
+    // Asegurar que data sea un array antes de procesarlo
+    const appointments = Array.isArray(data) ? data : [];
+    
     // Transformar datos para el gráfico
-    const chartData = data.reduce((acc, item) => {
+    const chartData = appointments.reduce((acc, item) => {
         const month = new Date(item.month).toLocaleDateString('es-PY', { month: 'short', year: 'numeric' });
         const existing = acc.find(d => d.month === month);
 
