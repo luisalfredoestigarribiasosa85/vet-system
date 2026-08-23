@@ -44,7 +44,7 @@ appointments.organizationId
 
 ```bash
 cd backend
-npm run migrate-saas
+pnpm run migrate-saas
 ```
 
 2. **Crear planes por defecto**:
@@ -76,7 +76,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 1. **Instalar dependencias adicionales**:
 
 ```bash
-npm install stripe redis winston
+pnpm install stripe redis winston
 ```
 
 2. **Configurar webhooks de Stripe**:
