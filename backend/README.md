@@ -19,7 +19,13 @@ pnpm install
 - Crear usuario con permisos
 
 ### 4. Configurar variables de entorno
-Crear archivo `.env` en la ra??z del proyecto:
+Copiar la plantilla y completar los valores:
+
+```bash
+cp .env.example .env
+```
+
+Contenido de referencia:
 
 ```env
 PORT=5000
