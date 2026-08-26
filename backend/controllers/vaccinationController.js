@@ -6,6 +6,12 @@ const {
     getDaysUntilNextDose,
 } = require('../utils/vaccinationHelpers');
 
+// Aislamiento multi-tenant: el organizationId proviene siempre del token
+const getOrgFilter = (req) => {
+    const organizationId = req.user?.organizationId ?? null;
+    return organizationId ? { organizationId } : {};
+};
+
 /**
  * Obtener todas las vacunas de una mascota
  */
@@ -14,7 +20,10 @@ const getVaccinationsByPet = async (req, res) => {
         const { petId } = req.params;
 
         const vaccinations = await Vaccination.findAll({
-            where: { petId },
+            where: {
+                petId,
+                ...getOrgFilter(req),
+            },
             include: [
                 {
                     model: User,
@@ -49,8 +58,13 @@ const createVaccination = async (req, res) => {
             weight,
         } = req.body;
 
-        // Validar que la mascota existe
-        const pet = await Pet.findByPk(petId);
+        // Validar que la mascota existe y pertenece a la organización del usuario
+        const pet = await Pet.findOne({
+            where: {
+                id: petId,
+                ...getOrgFilter(req),
+            }
+        });
         if (!pet) {
             return res.status(404).json({ message: 'Mascota no encontrada' });
         }
@@ -85,6 +99,8 @@ const createVaccination = async (req, res) => {
             status,
             doseNumber: doseNumber || 1,
             weight,
+            // El organizationId SIEMPRE se toma del token (no suplantable)
+            organizationId: req.user.organizationId,
         });
 
         // Obtener vacuna con relaciones
@@ -110,7 +126,12 @@ const createVaccination = async (req, res) => {
 const updateVaccination = async (req, res) => {
     try {
         const { id } = req.params;
-        const vaccination = await Vaccination.findByPk(id);
+        const vaccination = await Vaccination.findOne({
+            where: {
+                id,
+                ...getOrgFilter(req),
+            }
+        });
 
         if (!vaccination) {
             return res.status(404).json({ message: 'Vacuna no encontrada' });
@@ -176,7 +197,12 @@ const updateVaccination = async (req, res) => {
 const deleteVaccination = async (req, res) => {
     try {
         const { id } = req.params;
-        const vaccination = await Vaccination.findByPk(id);
+        const vaccination = await Vaccination.findOne({
+            where: {
+                id,
+                ...getOrgFilter(req),
+            }
+        });
 
         if (!vaccination) {
             return res.status(404).json({ message: 'Vacuna no encontrada' });
@@ -201,6 +227,7 @@ const getUpcomingVaccinations = async (req, res) => {
 
         const vaccinations = await Vaccination.findAll({
             where: {
+                ...getOrgFilter(req),
                 nextDoseDate: {
                     [Op.between]: [today, thirtyDaysFromNow],
                 },
@@ -251,6 +278,7 @@ const getOverdueVaccinations = async (req, res) => {
 
         const vaccinations = await Vaccination.findAll({
             where: {
+                ...getOrgFilter(req),
                 nextDoseDate: {
                     [Op.lt]: today,
                 },
@@ -291,8 +319,12 @@ const generatePDF = async (req, res) => {
         const { petId } = req.params;
         const { generateVaccinationCard } = require('../utils/pdfGenerator');
 
-        // Obtener mascota con cliente
-        const pet = await Pet.findByPk(petId, {
+        // Obtener mascota con cliente (verificando pertenencia a la organización)
+        const pet = await Pet.findOne({
+            where: {
+                id: petId,
+                ...getOrgFilter(req),
+            },
             include: [
                 {
                     model: Client,
@@ -308,7 +340,10 @@ const generatePDF = async (req, res) => {
 
         // Obtener vacunas de la mascota
         const vaccinations = await Vaccination.findAll({
-            where: { petId },
+            where: {
+                petId,
+                ...getOrgFilter(req),
+            },
             include: [
                 {
                     model: User,

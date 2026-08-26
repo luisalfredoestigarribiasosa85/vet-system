@@ -1,5 +1,11 @@
 const Service = require('../models/Service');
 
+// Aislamiento multi-tenant: el organizationId proviene siempre del token
+const getOrgFilter = (req) => {
+    const organizationId = req.user?.organizationId ?? null;
+    return organizationId ? { organizationId } : {};
+};
+
 // @desc    Obtener todos los servicios
 // @route   GET /api/services
 // @access  Private
@@ -7,7 +13,9 @@ exports.getAllServices = async (req, res) => {
     try {
         const { isActive } = req.query;
 
-        const where = {};
+        const where = {
+            ...getOrgFilter(req),
+        };
         if (isActive !== undefined) {
             where.isActive = isActive === 'true';
         }
@@ -29,7 +37,12 @@ exports.getAllServices = async (req, res) => {
 // @access  Private
 exports.getServiceById = async (req, res) => {
     try {
-        const service = await Service.findByPk(req.params.id);
+        const service = await Service.findOne({
+            where: {
+                id: req.params.id,
+                ...getOrgFilter(req),
+            }
+        });
 
         if (!service) {
             return res.status(404).json({ message: 'Servicio no encontrado' });
@@ -47,6 +60,15 @@ exports.getServiceById = async (req, res) => {
 // @access  Private (Admin)
 exports.createService = async (req, res) => {
     try {
+        // El organizationId SIEMPRE se toma del token (no suplantable por el cliente)
+        const organizationId = req.user?.organizationId;
+        if (!organizationId) {
+            return res.status(403).json({
+                message: 'Tu usuario no tiene una organización asignada',
+                code: 'NO_ORGANIZATION'
+            });
+        }
+
         const { name, description, price, category, duration } = req.body;
 
         if (!name || !price) {
@@ -58,7 +80,8 @@ exports.createService = async (req, res) => {
             description,
             price,
             category: category || 'consulta',
-            duration
+            duration,
+            organizationId
         });
 
         res.status(201).json(service);
@@ -73,7 +96,12 @@ exports.createService = async (req, res) => {
 // @access  Private (Admin)
 exports.updateService = async (req, res) => {
     try {
-        const service = await Service.findByPk(req.params.id);
+        const service = await Service.findOne({
+            where: {
+                id: req.params.id,
+                ...getOrgFilter(req),
+            }
+        });
 
         if (!service) {
             return res.status(404).json({ message: 'Servicio no encontrado' });
@@ -102,7 +130,12 @@ exports.updateService = async (req, res) => {
 // @access  Private (Admin)
 exports.deleteService = async (req, res) => {
     try {
-        const service = await Service.findByPk(req.params.id);
+        const service = await Service.findOne({
+            where: {
+                id: req.params.id,
+                ...getOrgFilter(req),
+            }
+        });
 
         if (!service) {
             return res.status(404).json({ message: 'Servicio no encontrado' });
@@ -126,6 +159,7 @@ exports.getServicesByCategory = async (req, res) => {
         const services = await Service.findAll({
             where: {
                 category: req.params.category,
+                ...getOrgFilter(req),
                 isActive: true
             },
             order: [['name', 'ASC']]

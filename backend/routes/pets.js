@@ -1,14 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { requireOrganization } = require('../middleware/multiTenantMiddleware');
 const Pet = require('../models/Pet');
 const Client = require('../models/Client');
+
+// Aislamiento multi-tenant: exige organización activa para todas las rutas de mascotas
+router.use(protect, requireOrganization);
 
 // GET todas las mascotas
 router.get('/', protect, async (req, res) => {
   try {
+    const organizationId = req.user?.organizationId ?? null;
+
     const pets = await Pet.findAll({
-      where: { isActive: true },
+      where: {
+        ...(organizationId ? { organizationId } : {}),
+        isActive: true
+      },
       include: [{
         model: Client,
         as: 'owner',
@@ -28,7 +37,13 @@ router.get('/', protect, async (req, res) => {
 // GET mascota por ID
 router.get('/:id', protect, async (req, res) => {
   try {
-    const pet = await Pet.findByPk(req.params.id, {
+    const organizationId = req.user?.organizationId ?? null;
+
+    const pet = await Pet.findOne({
+      where: {
+        id: req.params.id,
+        ...(organizationId ? { organizationId } : {})
+      },
       include: [{
         model: Client,
         as: 'owner'
@@ -51,7 +66,16 @@ router.get('/:id', protect, async (req, res) => {
 // POST crear mascota
 router.post('/', protect, async (req, res) => {
   try {
-    const pet = await Pet.create(req.body);
+    // El organizationId SIEMPRE se toma del token (no suplantable por el cliente)
+    const organizationId = req.user?.organizationId;
+    if (!organizationId) {
+      return res.status(403).json({
+        message: 'Tu usuario no tiene una organización asignada',
+        code: 'NO_ORGANIZATION'
+      });
+    }
+
+    const pet = await Pet.create({ ...req.body, organizationId });
     res.status(201).json(pet);
   } catch (error) {
     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeDatabaseError') {
@@ -64,7 +88,14 @@ router.post('/', protect, async (req, res) => {
 // PUT actualizar mascota
 router.put('/:id', protect, async (req, res) => {
   try {
-    const pet = await Pet.findByPk(req.params.id);
+    const organizationId = req.user?.organizationId ?? null;
+
+    const pet = await Pet.findOne({
+      where: {
+        id: req.params.id,
+        ...(organizationId ? { organizationId } : {})
+      }
+    });
     
     if (!pet) {
       return res.status(404).json({ message: 'Mascota no encontrada' });
@@ -83,7 +114,14 @@ router.put('/:id', protect, async (req, res) => {
 // DELETE mascota
 router.delete('/:id', protect, async (req, res) => {
   try {
-    const pet = await Pet.findByPk(req.params.id);
+    const organizationId = req.user?.organizationId ?? null;
+
+    const pet = await Pet.findOne({
+      where: {
+        id: req.params.id,
+        ...(organizationId ? { organizationId } : {})
+      }
+    });
     
     if (!pet) {
       return res.status(404).json({ message: 'Mascota no encontrada' });
@@ -102,7 +140,14 @@ router.delete('/:id', protect, async (req, res) => {
 // POST add reminder to pet
 router.post('/:id/reminders', protect, async (req, res) => {
   try {
-    const pet = await Pet.findByPk(req.params.id);
+    const organizationId = req.user?.organizationId ?? null;
+
+    const pet = await Pet.findOne({
+      where: {
+        id: req.params.id,
+        ...(organizationId ? { organizationId } : {})
+      }
+    });
     if (!pet) {
       return res.status(404).json({ message: 'Mascota no encontrada' });
     }

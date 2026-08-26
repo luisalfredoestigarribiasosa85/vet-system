@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { requireOrganization } = require('../middleware/multiTenantMiddleware');
 const {
     getAllServices,
     getServiceById,
@@ -9,6 +10,9 @@ const {
     deleteService,
     getServicesByCategory
 } = require('../controllers/servicesController');
+
+// Aislamiento multi-tenant: exige organización activa para todas las rutas de servicios
+router.use(protect, requireOrganization);
 
 /**
  * @swagger

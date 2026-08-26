@@ -3,6 +3,10 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 const { sequelize, testConnection } = require('./config/database');
+const { corsOptions, helmetConfig } = require('./config/security');
+const { generalLimiter, authLimiter } = require('./middleware/rateLimiter');
+const { sanitizeInputs } = require('./middleware/sanitizer');
+
 const errorHandler = require('./middleware/errorHandler');
 
 // Iniciar tareas programadas
@@ -13,10 +17,38 @@ require('./models');
 
 const app = express();
 
+// Confianza en proxy inverso (necesario para que express-rate-limit vea la IP real detrás de nginx, etc.)
+if (process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1);
+}
+
+// Seguridad: headers HTTP (Helmet)
+app.use(helmetConfig);
+
+// Relajar CSP únicamente en /api-docs (Swagger UI requiere scripts y estilos inline)
+app.use('/api-docs', (req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:"
+  );
+  next();
+});
+
+// Seguridad: CORS restringido a orígenes permitidos
+app.use(cors(corsOptions));
+
 // Middleware básico
-app.use(cors()); // CORS simple por ahora
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Seguridad: sanitización de inputs contra XSS
+// Nota: en Express 5, req.query es de solo lectura, por lo que la sanitización
+// se aplica efectivamente sobre body y params (la BD es PostgreSQL con Sequelize,
+// donde la inyección NoSQL no aplica).
+app.use(sanitizeInputs);
+
+// Rate limiting: límite general para toda la API
+app.use('/api', generalLimiter);
 
 // Servir archivos estáticos (uploads)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -35,8 +67,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'API Veterinaria - Documentación',
 }));
 
-// Rutas
-app.use('/api/auth', require('./routes/auth'));
+// Rutas (authLimiter extra para endpoints sensibles de autenticación)
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/clients', require('./routes/clients'));
 app.use('/api/pets', require('./routes/pets'));
 app.use('/api/appointments', require('./routes/appointments'));

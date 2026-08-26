@@ -1,30 +1,23 @@
 const Client = require('../models/Client');
 const Pet = require('../models/Pet');
-const Organization = require('../models/Organization');
 
-// Busca la organización del usuario o la primera activa; puede crear una por defecto si se requiere
-const resolveOrganizationId = async (user, { createIfMissing = false } = {}) => {
-  if (user?.organizationId) return user.organizationId;
+// Aislamiento multi-tenant estricto:
+// - El organizationId SIEMPRE proviene del token (req.user.organizationId),
+//   nunca de un fallback global (antes se tomaba "la primera organización
+//   activa", lo que podía exponer datos entre organizaciones).
+// - Los usuarios sin organización reciben 403 (requireOrganization en el router).
 
-  const organization = await Organization.findOne({ where: { isActive: true } });
-  if (organization || !createIfMissing) return organization?.id || null;
-
-  const defaultOrg = await Organization.create({
-    name: 'Organizacion por defecto',
-    subdomain: `default-${Date.now()}`,
-    isActive: true,
-  });
-
-  return defaultOrg.id;
-};
+/**
+ * Resuelve el organizationId exigido para operar sobre datos de tenants.
+ */
+const getRequiredOrgId = (req) => req.user?.organizationId ?? null;
 
 // @desc    Obtener todos los clientes
 // @route   GET /api/clients
 // @access  Private
 exports.getClients = async (req, res) => {
   try {
-    const userOrgId = req.user?.organizationId;
-    const organizationId = userOrgId ? await resolveOrganizationId(req.user) : null;
+    const organizationId = getRequiredOrgId(req);
 
     const clients = await Client.findAll({
       where: {
@@ -51,8 +44,7 @@ exports.getClients = async (req, res) => {
 // @access  Private
 exports.getClientById = async (req, res) => {
   try {
-    const userOrgId = req.user?.organizationId;
-    const organizationId = userOrgId ? await resolveOrganizationId(req.user) : null;
+    const organizationId = getRequiredOrgId(req);
 
     const client = await Client.findOne({
       where: {
@@ -83,10 +75,13 @@ exports.getClientById = async (req, res) => {
 // @access  Private
 exports.createClient = async (req, res) => {
   try {
-    const organizationId = await resolveOrganizationId(req.user, { createIfMissing: true });
+    const organizationId = getRequiredOrgId(req);
 
     if (!organizationId) {
-      return res.status(400).json({ message: 'No hay una organización activa configurada' });
+      return res.status(403).json({
+        message: 'Tu usuario no tiene una organización asignada',
+        code: 'NO_ORGANIZATION'
+      });
     }
 
     const clientData = { ...req.body, userId: req.user.id, organizationId };
@@ -103,8 +98,7 @@ exports.createClient = async (req, res) => {
 // @access  Private
 exports.updateClient = async (req, res) => {
   try {
-    const userOrgId = req.user?.organizationId;
-    const organizationId = userOrgId ? await resolveOrganizationId(req.user) : null;
+    const organizationId = getRequiredOrgId(req);
 
     const client = await Client.findOne({
       where: {
@@ -130,8 +124,7 @@ exports.updateClient = async (req, res) => {
 // @access  Private
 exports.deleteClient = async (req, res) => {
   try {
-    const userOrgId = req.user?.organizationId;
-    const organizationId = userOrgId ? await resolveOrganizationId(req.user) : null;
+    const organizationId = getRequiredOrgId(req);
 
     const client = await Client.findOne({
       where: {

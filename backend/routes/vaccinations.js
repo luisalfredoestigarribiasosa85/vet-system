@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { requireOrganization } = require('../middleware/multiTenantMiddleware');
 const {
     getVaccinationsByPet,
     createVaccination,
@@ -10,6 +11,9 @@ const {
     getOverdueVaccinations,
     generatePDF,
 } = require('../controllers/vaccinationController');
+
+// Aislamiento multi-tenant: exige organización activa para todas las rutas de vacunas
+router.use(protect, requireOrganization);
 
 /**
  * @swagger

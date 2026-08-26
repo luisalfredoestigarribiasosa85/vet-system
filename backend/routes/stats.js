@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { requireOrganization } = require('../middleware/multiTenantMiddleware');
 const {
     getAppointmentStats,
     getRevenueStats,
@@ -8,6 +9,9 @@ const {
     getInventoryStats,
     getOverviewStats,
 } = require('../controllers/statsController');
+
+// Aislamiento multi-tenant: exige organización activa para todas las estadísticas
+router.use(protect, requireOrganization);
 
 /**
  * @swagger

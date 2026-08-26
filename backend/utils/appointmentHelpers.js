@@ -25,7 +25,7 @@ const formatTime = (date) => {
   return `${hours}:${minutes}`;
 };
 
-const buildOverlapWhere = (field, entityId, startDateTime, endDateTime, excludeId) => {
+const buildOverlapWhere = (field, entityId, startDateTime, endDateTime, excludeId, organizationId) => {
   const where = {
     [field]: entityId,
     isActive: true,
@@ -38,6 +38,11 @@ const buildOverlapWhere = (field, entityId, startDateTime, endDateTime, excludeI
 
   if (excludeId) {
     where.id = { [Op.ne]: excludeId };
+  }
+
+  // Aislamiento multi-tenant: los conflictos solo se evalúan dentro de la organización
+  if (organizationId) {
+    where.organizationId = organizationId;
   }
 
   return where;
@@ -71,13 +76,13 @@ const computeSlot = ({ date, time, durationMinutes }) => {
   };
 };
 
-const ensureNoConflicts = async ({ vetId, petId, startDateTime, endDateTime, excludeId }) => {
+const ensureNoConflicts = async ({ vetId, petId, startDateTime, endDateTime, excludeId, organizationId }) => {
   if (!vetId || !petId) {
     return;
   }
 
   const vetOverlap = await Appointment.findOne({
-    where: buildOverlapWhere('vetId', vetId, startDateTime, endDateTime, excludeId),
+    where: buildOverlapWhere('vetId', vetId, startDateTime, endDateTime, excludeId, organizationId),
   });
 
   if (vetOverlap) {
@@ -87,7 +92,7 @@ const ensureNoConflicts = async ({ vetId, petId, startDateTime, endDateTime, exc
   }
 
   const petOverlap = await Appointment.findOne({
-    where: buildOverlapWhere('petId', petId, startDateTime, endDateTime, excludeId),
+    where: buildOverlapWhere('petId', petId, startDateTime, endDateTime, excludeId, organizationId),
   });
 
   if (petOverlap) {

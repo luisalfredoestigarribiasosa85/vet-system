@@ -6,11 +6,18 @@ const User = require('../models/User');
 const { Op } = require('sequelize');
 const PDFDocument = require('pdfkit');
 
-// Función auxiliar para generar número de factura
-const generateInvoiceNumber = async () => {
+// Aislamiento multi-tenant: el organizationId proviene siempre del token
+const getOrgFilter = (req) => {
+    const organizationId = req.user?.organizationId ?? null;
+    return organizationId ? { organizationId } : {};
+};
+
+// Función auxiliar para generar número de factura (secuencia por organización)
+const generateInvoiceNumber = async (organizationId) => {
     const year = new Date().getFullYear();
     const lastInvoice = await Invoice.findOne({
         where: {
+            ...(organizationId ? { organizationId } : {}),
             invoiceNumber: {
                 [Op.like]: `FAC-${year}-%`
             }
@@ -34,7 +41,9 @@ exports.getAllInvoices = async (req, res) => {
     try {
         const { status, clientId, startDate, endDate } = req.query;
 
-        const where = {};
+        const where = {
+            ...getOrgFilter(req),
+        };
         if (status) where.status = status;
         if (clientId) where.clientId = clientId;
         if (startDate && endDate) {
@@ -77,7 +86,11 @@ exports.getAllInvoices = async (req, res) => {
 // @access  Private
 exports.getInvoiceById = async (req, res) => {
     try {
-        const invoice = await Invoice.findByPk(req.params.id, {
+        const invoice = await Invoice.findOne({
+            where: {
+                id: req.params.id,
+                ...getOrgFilter(req),
+            },
             include: [
                 {
                     model: Client,
@@ -122,10 +135,37 @@ exports.getInvoiceById = async (req, res) => {
 // @access  Private
 exports.createInvoice = async (req, res) => {
     try {
+        // El organizationId SIEMPRE se toma del token (no suplantable por el cliente)
+        const organizationId = req.user?.organizationId;
+        if (!organizationId) {
+            return res.status(403).json({
+                message: 'Tu usuario no tiene una organización asignada',
+                code: 'NO_ORGANIZATION'
+            });
+        }
+
         const { clientId, petId, items, discount, tax, notes, dueDate } = req.body;
 
         if (!clientId || !items || items.length === 0) {
             return res.status(400).json({ message: 'Cliente e items son requeridos' });
+        }
+
+        // Validar que el cliente pertenece a la organización del usuario (evita cross-tenant)
+        const client = await Client.findOne({
+            where: { id: clientId, organizationId }
+        });
+        if (!client) {
+            return res.status(404).json({ message: 'Cliente no encontrado en tu organización' });
+        }
+
+        // Validar mascota si se proporciona (misma organización)
+        if (petId) {
+            const petExists = await Pet.findOne({
+                where: { id: petId, organizationId }
+            });
+            if (!petExists) {
+                return res.status(404).json({ message: 'Mascota no encontrada en tu organización' });
+            }
         }
 
         // Calcular subtotal
@@ -134,8 +174,8 @@ exports.createInvoice = async (req, res) => {
         const taxAmount = tax || 0;
         const total = subtotal - discountAmount + taxAmount;
 
-        // Generar número de factura
-        const invoiceNumber = await generateInvoiceNumber();
+        // Generar número de factura (secuencia propia de la organización)
+        const invoiceNumber = await generateInvoiceNumber(organizationId);
 
         // Manejar fecha de vencimiento
         const issueDate = new Date(); // Fecha de emisión (hoy)
@@ -173,7 +213,8 @@ exports.createInvoice = async (req, res) => {
             status: 'pendiente',
             notes,
             dueDate: finalDueDate,
-            createdBy: req.user.id
+            createdBy: req.user.id,
+            organizationId
         });
 
         // Cargar relaciones para la respuesta
@@ -204,7 +245,12 @@ exports.createInvoice = async (req, res) => {
 // @access  Private
 exports.updateInvoice = async (req, res) => {
     try {
-        const invoice = await Invoice.findByPk(req.params.id);
+        const invoice = await Invoice.findOne({
+            where: {
+                id: req.params.id,
+                ...getOrgFilter(req),
+            }
+        });
 
         if (!invoice) {
             return res.status(404).json({ message: 'Factura no encontrada' });
@@ -279,7 +325,12 @@ exports.updateInvoice = async (req, res) => {
 // @access  Private
 exports.cancelInvoice = async (req, res) => {
     try {
-        const invoice = await Invoice.findByPk(req.params.id);
+        const invoice = await Invoice.findOne({
+            where: {
+                id: req.params.id,
+                ...getOrgFilter(req),
+            }
+        });
 
         if (!invoice) {
             return res.status(404).json({ message: 'Factura no encontrada' });
@@ -303,7 +354,12 @@ exports.cancelInvoice = async (req, res) => {
 // @access  Private
 exports.addPayment = async (req, res) => {
     try {
-        const invoice = await Invoice.findByPk(req.params.id);
+        const invoice = await Invoice.findOne({
+            where: {
+                id: req.params.id,
+                ...getOrgFilter(req),
+            }
+        });
 
         if (!invoice) {
             return res.status(404).json({ message: 'Factura no encontrada' });
@@ -379,7 +435,11 @@ exports.addPayment = async (req, res) => {
 // @access  Private
 exports.generateInvoicePDF = async (req, res) => {
     try {
-        const invoice = await Invoice.findByPk(req.params.id, {
+        const invoice = await Invoice.findOne({
+            where: {
+                id: req.params.id,
+                ...getOrgFilter(req),
+            },
             include: [
                 {
                     model: Client,
@@ -509,7 +569,11 @@ exports.getPaymentStats = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
 
-        const where = {};
+        const orgFilter = getOrgFilter(req);
+
+        const where = {
+            ...orgFilter,
+        };
         if (startDate && endDate) {
             where.issueDate = {
                 [Op.between]: [new Date(startDate), new Date(endDate)]
@@ -533,13 +597,20 @@ exports.getPaymentStats = async (req, res) => {
             raw: true
         });
 
-        // Pagos por método
+        // Pagos por método (Payment no tiene organizationId propio: se filtra vía su factura)
         const paymentsByMethod = await Payment.findAll({
             attributes: [
                 'paymentMethod',
                 [Payment.sequelize.fn('COUNT', Payment.sequelize.col('id')), 'count'],
                 [Payment.sequelize.fn('SUM', Payment.sequelize.cast(Payment.sequelize.col('amount'), 'DECIMAL')), 'total']
             ],
+            include: [{
+                model: Invoice,
+                as: 'invoice',
+                attributes: [],
+                where: orgFilter,
+                required: true,
+            }],
             group: ['paymentMethod'],
             raw: true
         });
@@ -558,6 +629,13 @@ exports.getPaymentStats = async (req, res) => {
                 [Payment.sequelize.fn('DATE_TRUNC', 'month', Payment.sequelize.col('paymentDate')), 'month'],
                 [Payment.sequelize.fn('SUM', Payment.sequelize.col('amount')), 'total']
             ],
+            include: [{
+                model: Invoice,
+                as: 'invoice',
+                attributes: [],
+                where: orgFilter,
+                required: true,
+            }],
             group: [Payment.sequelize.fn('DATE_TRUNC', 'month', Payment.sequelize.col('paymentDate'))],
             order: [[Payment.sequelize.fn('DATE_TRUNC', 'month', Payment.sequelize.col('paymentDate')), 'ASC']],
             raw: true

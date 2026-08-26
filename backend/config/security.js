@@ -7,6 +7,10 @@ const corsOptions = {
             process.env.FRONTEND_URL || 'http://localhost:5173',
             'http://localhost:3000',
             'http://localhost:5173',
+            // Orígenes adicionales configurables por entorno (separados por coma)
+            ...(process.env.CORS_ORIGINS
+                ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+                : []),
         ];
 
         // Permitir requests sin origin (mobile apps, Postman, etc.)

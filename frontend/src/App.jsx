@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
 import Pets from './pages/Pets';
@@ -50,9 +51,11 @@ function App() {
         <Route
           path="/"
           element={
-            <Layout>
-              {/* Layout wraps sidebar + main content */}
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                {/* Layout wraps sidebar + main content */}
+              </Layout>
+            </ProtectedRoute>
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />

@@ -1,18 +1,25 @@
 const { PlanPurchase, Plan, Client, Pet } = require('../models');
 
-const purchaseIncludes = [
+// Aislamiento multi-tenant: PlanPurchase no tiene organizationId propio,
+// se filtra a través del cliente asociado.
+const getPurchaseIncludes = (organizationId) => [
   { model: Plan, as: 'plan' },
   {
     model: Client,
     as: 'client',
+    ...(organizationId
+      ? { where: { organizationId }, required: true }
+      : {}),
     include: [{ model: Pet, as: 'pets', attributes: ['id', 'name'], required: false }],
   },
 ];
 
 exports.getPlanPurchases = async (req, res) => {
   try {
+    const organizationId = req.user?.organizationId ?? null;
+
     const purchases = await PlanPurchase.findAll({
-      include: purchaseIncludes,
+      include: getPurchaseIncludes(organizationId),
       order: [['createdAt', 'DESC']],
     });
     res.json(purchases);
@@ -24,7 +31,11 @@ exports.getPlanPurchases = async (req, res) => {
 
 exports.updatePlanPurchaseStatus = async (req, res) => {
   try {
-    const purchase = await PlanPurchase.findByPk(req.params.id, { include: purchaseIncludes });
+    const organizationId = req.user?.organizationId ?? null;
+
+    const purchase = await PlanPurchase.findByPk(req.params.id, {
+      include: getPurchaseIncludes(organizationId),
+    });
     if (!purchase) {
       return res.status(404).json({ message: 'Compra no encontrada' });
     }

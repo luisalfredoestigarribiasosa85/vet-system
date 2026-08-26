@@ -2,7 +2,11 @@ const express = require('express');
 const { Op } = require('sequelize');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { requireOrganization } = require('../middleware/multiTenantMiddleware');
 const { Appointment, Pet, Client, User } = require('../models');
+
+// Aislamiento multi-tenant: exige organización activa para todas las rutas de citas
+router.use(protect, requireOrganization);
 const {
   BLOCKING_STATUSES,
   formatTime,
@@ -45,7 +49,11 @@ const validateRequiredFields = (payload) => {
 router.get('/', protect, async (req, res) => {
   try {
     const { date, status, vetId, petId } = req.query;
-    const where = { isActive: true };
+    const organizationId = req.user?.organizationId ?? null;
+    const where = {
+      ...(organizationId ? { organizationId } : {}),
+      isActive: true
+    };
 
     if (date) where.date = date;
     if (status) where.status = status;
@@ -97,6 +105,7 @@ router.get('/availability', protect, async (req, res) => {
     const dayAppointments = await Appointment.findAll({
       where: {
         vetId,
+        ...(req.user?.organizationId ? { organizationId: req.user.organizationId } : {}),
         isActive: true,
         status: { [Op.in]: BLOCKING_STATUSES },
         date,
@@ -144,7 +153,11 @@ router.get('/availability', protect, async (req, res) => {
 router.get('/veterinarians', protect, async (req, res) => {
   try {
     const vets = await User.findAll({
-      where: { role: { [Op.in]: ['veterinario', 'admin'] }, isActive: true },
+      where: {
+        role: { [Op.in]: ['veterinario', 'admin'] },
+        isActive: true,
+        ...(req.user?.organizationId ? { organizationId: req.user.organizationId } : {}),
+      },
       order: [['name', 'ASC']],
       attributes: ['id', 'name', 'email', 'role'],
     });
@@ -157,6 +170,14 @@ router.get('/veterinarians', protect, async (req, res) => {
 
 router.post('/', protect, async (req, res) => {
   try {
+    const organizationId = req.user?.organizationId;
+    if (!organizationId) {
+      return res.status(403).json({
+        message: 'Tu usuario no tiene una organización asignada',
+        code: 'NO_ORGANIZATION'
+      });
+    }
+
     const payload = { ...req.body };
     validateRequiredFields(payload);
 
@@ -167,6 +188,7 @@ router.post('/', protect, async (req, res) => {
       petId: payload.petId,
       startDateTime,
       endDateTime,
+      organizationId,
     });
 
     const appointment = await Appointment.create({
@@ -184,6 +206,8 @@ router.post('/', protect, async (req, res) => {
       reminderDate: payload.reminderDate || null,
       startDateTime,
       endDateTime,
+      // El organizationId SIEMPRE se toma del token (no suplantable)
+      organizationId,
     });
 
     const result = await Appointment.findByPk(appointment.id, { include: agendaIncludes });
@@ -196,7 +220,14 @@ router.post('/', protect, async (req, res) => {
 
 router.put('/:id', protect, async (req, res) => {
   try {
-    const appointment = await Appointment.findByPk(req.params.id);
+    const organizationId = req.user?.organizationId ?? null;
+
+    const appointment = await Appointment.findOne({
+      where: {
+        id: req.params.id,
+        ...(organizationId ? { organizationId } : {})
+      }
+    });
 
     if (!appointment || !appointment.isActive) {
       return res.status(404).json({ message: 'Cita no encontrada' });
@@ -213,6 +244,7 @@ router.put('/:id', protect, async (req, res) => {
       startDateTime,
       endDateTime,
       excludeId: appointment.id,
+      organizationId: organizationId || undefined,
     });
 
     await appointment.update({
@@ -242,7 +274,14 @@ router.put('/:id', protect, async (req, res) => {
 
 router.delete('/:id', protect, async (req, res) => {
   try {
-    const appointment = await Appointment.findByPk(req.params.id);
+    const organizationId = req.user?.organizationId ?? null;
+
+    const appointment = await Appointment.findOne({
+      where: {
+        id: req.params.id,
+        ...(organizationId ? { organizationId } : {})
+      }
+    });
 
     if (!appointment || !appointment.isActive) {
       return res.status(404).json({ message: 'Cita no encontrada' });

@@ -4,13 +4,22 @@ const User = require('../models/User');
 const path = require('path');
 const fs = require('fs');
 
+// Aislamiento multi-tenant: el organizationId proviene siempre del token
+const getOrgFilter = (req) => {
+    const organizationId = req.user?.organizationId ?? null;
+    return organizationId ? { organizationId } : {};
+};
+
 // @desc    Obtener registros médicos de una mascota
 // @route   GET /api/medical/pets/:petId/records
 // @access  Private
 exports.getPetRecords = async (req, res) => {
     try {
         const records = await MedicalRecord.findAll({
-            where: { petId: req.params.petId },
+            where: {
+                petId: req.params.petId,
+                ...getOrgFilter(req),
+            },
             include: [
                 {
                     model: User,
@@ -37,9 +46,19 @@ exports.createRecord = async (req, res) => {
             return res.status(401).json({ message: 'Usuario no autenticado' });
         }
 
+        // El organizationId SIEMPRE se toma del token (no suplantable por el cliente)
+        const organizationId = req.user.organizationId;
+        if (!organizationId) {
+            return res.status(403).json({
+                message: 'Tu usuario no tiene una organización asignada',
+                code: 'NO_ORGANIZATION'
+            });
+        }
+
         const record = await MedicalRecord.create({
             ...req.body,
-            vetId: req.user.id
+            vetId: req.user.id,
+            organizationId
         });
         res.status(201).json(record);
     } catch (error) {
@@ -56,7 +75,12 @@ exports.createRecord = async (req, res) => {
 // @access  Private
 exports.uploadImage = async (req, res) => {
     try {
-        const record = await MedicalRecord.findByPk(req.params.recordId);
+        const record = await MedicalRecord.findOne({
+            where: {
+                id: req.params.recordId,
+                ...getOrgFilter(req),
+            }
+        });
 
         if (!record) {
             // Eliminar archivo subido si el registro no existe
@@ -108,7 +132,12 @@ exports.uploadImage = async (req, res) => {
 // @access  Private
 exports.deleteAttachment = async (req, res) => {
     try {
-        const record = await MedicalRecord.findByPk(req.params.recordId);
+        const record = await MedicalRecord.findOne({
+            where: {
+                id: req.params.recordId,
+                ...getOrgFilter(req),
+            }
+        });
 
         if (!record) {
             return res.status(404).json({ message: 'Registro médico no encontrado' });
@@ -148,7 +177,11 @@ exports.deleteAttachment = async (req, res) => {
 // @access  Private
 exports.getRecordById = async (req, res) => {
     try {
-        const record = await MedicalRecord.findByPk(req.params.id, {
+        const record = await MedicalRecord.findOne({
+            where: {
+                id: req.params.id,
+                ...getOrgFilter(req),
+            },
             include: [
                 {
                     model: User,
@@ -179,7 +212,11 @@ exports.getRecordById = async (req, res) => {
 // @access  Private
 exports.generatePrescriptionPDF = async (req, res) => {
     try {
-        const record = await MedicalRecord.findByPk(req.params.id, {
+        const record = await MedicalRecord.findOne({
+            where: {
+                id: req.params.id,
+                ...getOrgFilter(req),
+            },
             include: [
                 {
                     model: User,
@@ -261,8 +298,13 @@ exports.getDashboardStats = async (req, res) => {
         const { Op } = require('sequelize');
         const Client = require('../models/Client');
 
+        // Filtro multi-tenant para todas las consultas de este dashboard
+        const orgFilter = getOrgFilter(req);
+
         // 1. Total de registros médicos
-        const totalRecords = await MedicalRecord.count();
+        const totalRecords = await MedicalRecord.count({
+            where: orgFilter
+        });
 
         // 2. Registros de este mes
         const startOfMonth = new Date();
@@ -271,6 +313,7 @@ exports.getDashboardStats = async (req, res) => {
 
         const recordsThisMonth = await MedicalRecord.count({
             where: {
+                ...orgFilter,
                 createdAt: {
                     [Op.gte]: startOfMonth
                 }
@@ -279,6 +322,7 @@ exports.getDashboardStats = async (req, res) => {
 
         // 3. Diagnósticos más comunes (top 5)
         const diagnosisRecords = await MedicalRecord.findAll({
+            where: orgFilter,
             attributes: ['diagnosis'],
             raw: true
         });
@@ -300,6 +344,7 @@ exports.getDashboardStats = async (req, res) => {
 
         const monthlyRecords = await MedicalRecord.findAll({
             where: {
+                ...orgFilter,
                 createdAt: {
                     [Op.gte]: sixMonthsAgo
                 }
@@ -321,6 +366,7 @@ exports.getDashboardStats = async (req, res) => {
 
         // 5. Registros recientes (últimos 10)
         const recentRecords = await MedicalRecord.findAll({
+            where: orgFilter,
             limit: 10,
             order: [['createdAt', 'DESC']],
             include: [
@@ -344,6 +390,7 @@ exports.getDashboardStats = async (req, res) => {
 
         // 6. Distribución por especies
         const speciesRecords = await MedicalRecord.findAll({
+            where: orgFilter,
             include: [{
                 model: Pet,
                 as: 'pet',

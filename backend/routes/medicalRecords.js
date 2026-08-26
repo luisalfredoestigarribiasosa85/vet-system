@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { requireOrganization } = require('../middleware/multiTenantMiddleware');
 const upload = require('../config/multer');
+
+// Aislamiento multi-tenant: exige organización activa para historias clínicas
+router.use(protect, requireOrganization);
 const {
     getPetRecords,
     createRecord,

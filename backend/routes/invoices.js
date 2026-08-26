@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { requireOrganization } = require('../middleware/multiTenantMiddleware');
 const {
   getAllInvoices,
   getInvoiceById,
@@ -11,6 +12,9 @@ const {
   generateInvoicePDF,
   getPaymentStats
 } = require('../controllers/invoicesController');
+
+// Aislamiento multi-tenant: exige organización activa para facturas y pagos
+router.use(protect, requireOrganization);
 
 /**
  * @swagger

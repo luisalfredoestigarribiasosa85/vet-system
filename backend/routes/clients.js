@@ -8,6 +8,11 @@ const {
   deleteClient
 } = require('../controllers/clientController');
 const { protect } = require('../middleware/authMiddleware');
+const { requireOrganization } = require('../middleware/multiTenantMiddleware');
+
+// Aislamiento multi-tenant: exige organización activa para todas las rutas de clientes
+router.use(protect, requireOrganization);
+
 
 /**
  * @swagger

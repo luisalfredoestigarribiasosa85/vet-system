@@ -1,12 +1,21 @@
 const { Appointment, Pet } = require('../models');
 
+// Aislamiento multi-tenant: el organizationId proviene siempre del token
+const getOrgFilter = (req) => {
+  const organizationId = req.user?.organizationId ?? null;
+  return organizationId ? { organizationId } : {};
+};
+
 // @desc    Obtener todas las citas
-// @route   GET /api/appointmentsPet } = require('../models');
+// @route   GET /api/appointments
 // @access  Private
 exports.getAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.findAll({
-      where: { isActive: true },
+      where: {
+        ...getOrgFilter(req),
+        isActive: true
+      },
       order: [['createdAt', 'DESC']]
     });
     res.json(appointments);
@@ -21,7 +30,12 @@ exports.getAppointments = async (req, res) => {
 // @access  Private
 exports.getAppointmentById = async (req, res) => {
   try {
-    const appointment = await Appointment.findByPk(req.params.id);
+    const appointment = await Appointment.findOne({
+      where: {
+        id: req.params.id,
+        ...getOrgFilter(req)
+      }
+    });
     if (!appointment) {
       return res.status(404).json({ message: 'Cita no encontrada' });
     }
@@ -35,9 +49,16 @@ exports.getAppointmentById = async (req, res) => {
 // @desc    Crear una nueva cita
 // @route   POST /api/appointments
 // @access  Private
-// Agregar esta función al controlador
 exports.createAppointment = async (req, res) => {
   try {
+    const organizationId = req.user?.organizationId;
+    if (!organizationId) {
+      return res.status(403).json({
+        message: 'Tu usuario no tiene una organización asignada',
+        code: 'NO_ORGANIZATION'
+      });
+    }
+
     const { petId, date, time, reason, reminderMethod = 'email' } = req.body;
 
     // Calcular la fecha del recordatorio (24 horas antes)
@@ -50,7 +71,8 @@ exports.createAppointment = async (req, res) => {
       time,
       reason,
       reminderDate,
-      reminderMethod
+      reminderMethod,
+      organizationId
     });
 
     res.status(201).json(appointment);
@@ -65,7 +87,12 @@ exports.createAppointment = async (req, res) => {
 // @access  Private
 exports.updateAppointment = async (req, res) => {
   try {
-    const appointment = await Appointment.findByPk(req.params.id);
+    const appointment = await Appointment.findOne({
+      where: {
+        id: req.params.id,
+        ...getOrgFilter(req)
+      }
+    });
     if (!appointment) {
       return res.status(404).json({ message: 'Cita no encontrada' });
     }
@@ -82,7 +109,12 @@ exports.updateAppointment = async (req, res) => {
 // @access  Private
 exports.deleteAppointment = async (req, res) => {
   try {
-    const appointment = await Appointment.findByPk(req.params.id);
+    const appointment = await Appointment.findOne({
+      where: {
+        id: req.params.id,
+        ...getOrgFilter(req)
+      }
+    });
     if (!appointment) {
       return res.status(404).json({ message: 'Cita no encontrada' });
     }

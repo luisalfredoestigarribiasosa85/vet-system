@@ -2,6 +2,12 @@ const { Appointment, Invoice, Vaccination, Inventory, Pet, Client } = require('.
 const { Op } = require('sequelize');
 const { sequelize } = require('../config/database');
 
+// Aislamiento multi-tenant: el organizationId proviene siempre del token
+const getOrgFilter = (req) => {
+    const organizationId = req.user?.organizationId ?? null;
+    return organizationId ? { organizationId } : {};
+};
+
 /**
  * Obtener estadísticas de citas (últimos 6 meses)
  */
@@ -12,6 +18,7 @@ const getAppointmentStats = async (req, res) => {
 
         const appointments = await Appointment.findAll({
             where: {
+                ...getOrgFilter(req),
                 date: {
                     [Op.gte]: sixMonthsAgo,
                 },
@@ -43,6 +50,7 @@ const getRevenueStats = async (req, res) => {
 
         const revenue = await Invoice.findAll({
             where: {
+                ...getOrgFilter(req),
                 issueDate: {
                     [Op.gte]: sixMonthsAgo,
                 },
@@ -70,6 +78,7 @@ const getRevenueStats = async (req, res) => {
 const getVaccinationStats = async (req, res) => {
     try {
         const stats = await Vaccination.findAll({
+            where: getOrgFilter(req),
             attributes: [
                 'status',
                 [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
@@ -92,6 +101,7 @@ const getInventoryStats = async (req, res) => {
     try {
         const lowStock = await Inventory.findAll({
             where: {
+                ...getOrgFilter(req),
                 quantity: {
                     [Op.lte]: sequelize.col('minStock'),
                 },
@@ -112,12 +122,14 @@ const getInventoryStats = async (req, res) => {
  */
 const getOverviewStats = async (req, res) => {
     try {
+        const orgFilter = getOrgFilter(req);
         const now = new Date();
         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
         // Citas del mes
         const appointmentsThisMonth = await Appointment.count({
             where: {
+                ...orgFilter,
                 date: {
                     [Op.gte]: firstDayOfMonth,
                 },
@@ -127,6 +139,7 @@ const getOverviewStats = async (req, res) => {
         // Ingresos del mes
         const revenueThisMonth = await Invoice.sum('total', {
             where: {
+                ...orgFilter,
                 issueDate: {
                     [Op.gte]: firstDayOfMonth,
                 },
@@ -135,11 +148,12 @@ const getOverviewStats = async (req, res) => {
         });
 
         // Total de mascotas
-        const totalPets = await Pet.count();
+        const totalPets = await Pet.count({ where: orgFilter });
 
         // Vacunas aplicadas este mes
         const vaccinationsThisMonth = await Vaccination.count({
             where: {
+                ...orgFilter,
                 applicationDate: {
                     [Op.gte]: firstDayOfMonth,
                 },
@@ -147,11 +161,12 @@ const getOverviewStats = async (req, res) => {
         });
 
         // Total de clientes
-        const totalClients = await Client.count();
+        const totalClients = await Client.count({ where: { ...orgFilter, isActive: true } });
 
         // Productos con stock bajo
         const lowStockCount = await Inventory.count({
             where: {
+                ...orgFilter,
                 quantity: {
                     [Op.lte]: sequelize.col('minStock'),
                 },
