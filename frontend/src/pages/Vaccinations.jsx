@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     getVaccinationsByPet,
@@ -22,15 +22,8 @@ const Vaccinations = () => {
     const [showForm, setShowForm] = useState(false);
     const [editingVaccination, setEditingVaccination] = useState(null);
     const [viewMode, setViewMode] = useState('list'); // 'list' o 'calendar'
-    const [selectedEvent, setSelectedEvent] = useState(null);
 
-    useEffect(() => {
-        if (petId) {
-            loadVaccinations();
-        }
-    }, [petId]);
-
-    const loadVaccinations = async () => {
+    const loadVaccinations = useCallback(async () => {
         try {
             setLoading(true);
             const data = await getVaccinationsByPet(petId);
@@ -46,7 +39,13 @@ const Vaccinations = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [petId]);
+
+    useEffect(() => {
+        if (petId) {
+            loadVaccinations();
+        }
+    }, [petId, loadVaccinations]);
 
     const handleCreate = async (vaccinationData) => {
         try {
@@ -105,7 +104,6 @@ const Vaccinations = () => {
     };
 
     const handleSelectEvent = (vaccination) => {
-        setSelectedEvent(vaccination);
         setEditingVaccination(vaccination);
         setShowForm(true);
     };

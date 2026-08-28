@@ -1,34 +1,41 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import Dashboard from './pages/Dashboard';
-import Clients from './pages/Clients';
-import Pets from './pages/Pets';
-import Appointments from './pages/Appointments';
-import Medical from './pages/Medical';
-import Inventory from './pages/Inventory';
-import Invoices from './pages/Invoices';
-import Payments from './pages/Payments';
-import Plans from './pages/Plans';
-import Login from './pages/auth/Login';
-import MedicalHistory from './pages/MedicalHistory';
-import PortalLogin from './pages/portal/PortalLogin';
-import PortalRegister from './pages/portal/PortalRegister';
 import PortalLayout from './components/portal/PortalLayout';
 import PortalProtectedRoute from './components/portal/PortalProtectedRoute';
-import PortalDashboard from './pages/portal/PortalDashboard';
-import PortalAppointments from './pages/portal/PortalAppointments';
-import PortalPets from './pages/portal/PortalPets';
-import PortalPetDetails from './pages/portal/PortalPetDetails';
-import PortalPlans from './pages/portal/PortalPlans';
-import Vaccinations from './pages/Vaccinations';
-import Onboarding from './pages/Onboarding';
-import Subscription from './pages/Subscription';
+import Loader from './components/common/Loader';
+
+// Páginas cargadas bajo demanda (code splitting por ruta)
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Clients = lazy(() => import('./pages/Clients'));
+const Pets = lazy(() => import('./pages/Pets'));
+const Appointments = lazy(() => import('./pages/Appointments'));
+const Medical = lazy(() => import('./pages/Medical'));
+const Inventory = lazy(() => import('./pages/Inventory'));
+const Invoices = lazy(() => import('./pages/Invoices'));
+const Payments = lazy(() => import('./pages/Payments'));
+const Plans = lazy(() => import('./pages/Plans'));
+const Login = lazy(() => import('./pages/auth/Login'));
+const MedicalHistory = lazy(() => import('./pages/MedicalHistory'));
+const Vaccinations = lazy(() => import('./pages/Vaccinations'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
+const Subscription = lazy(() => import('./pages/Subscription'));
+
+// Portal
+const PortalLogin = lazy(() => import('./pages/portal/PortalLogin'));
+const PortalRegister = lazy(() => import('./pages/portal/PortalRegister'));
+const PortalDashboard = lazy(() => import('./pages/portal/PortalDashboard'));
+const PortalAppointments = lazy(() => import('./pages/portal/PortalAppointments'));
+const PortalPets = lazy(() => import('./pages/portal/PortalPets'));
+const PortalPetDetails = lazy(() => import('./pages/portal/PortalPetDetails'));
+const PortalPlans = lazy(() => import('./pages/portal/PortalPlans'));
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Suspense fallback={<Loader fullScreen />}>
+        <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/portal/login" element={<PortalLogin />} />
         <Route path="/portal/register" element={<PortalRegister />} />
@@ -74,7 +81,8 @@ function App() {
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

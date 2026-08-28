@@ -43,18 +43,14 @@ const CreateInvoiceModal = ({ isOpen, onClose, onSuccess }) => {
 
     const loadInitialData = async () => {
         try {
-            console.log('Cargando datos iniciales...');
             const [clientsRes, servicesRes] = await Promise.all([
                 api.get('/clients'),
                 api.get('/services?isActive=true')
             ]);
-            console.log('Clientes recibidos:', clientsRes.data);
-            console.log('Servicios recibidos:', servicesRes.data);
             setClients(clientsRes.data);
             setServices(servicesRes.data);
         } catch (error) {
             console.error('Error al cargar datos:', error);
-            console.error('Detalles del error:', error.response);
             toast.error('Error al cargar datos iniciales');
         }
     };
@@ -226,10 +222,10 @@ const CreateInvoiceModal = ({ isOpen, onClose, onSuccess }) => {
                                 <p className="text-sm text-yellow-800">
                                     <strong>No hay servicios disponibles.</strong>
                                     <br />
-                                    Ejecuta el script de migración en el backend:
+                                    Registra el catálogo de servicios desde el backend con:
                                     <br />
                                     <code className="bg-yellow-100 px-2 py-1 rounded mt-2 inline-block">
-                                        node scripts/migrate-payments.js
+                                        pnpm run seed:services
                                     </code>
                                 </p>
                             </div>

@@ -9,6 +9,7 @@ const crypto = require('crypto');
  * PagoPar es la solución de pagos local más popular en Paraguay
  * Soporta: tarjetas, billeteras electrónicas, QR, transferencias bancarias, PIX
  */
+const logger = require('../../config/logger');
 class PagoParProvider extends PaymentProvider {
     constructor(config) {
         super(config);
@@ -116,7 +117,7 @@ class PagoParProvider extends PaymentProvider {
 
             throw new Error('Error al crear sesión de checkout en PagoPar');
         } catch (error) {
-            console.error('Error en createCheckoutSession PagoPar:', error.response?.data || error.message);
+            logger.error('Error en createCheckoutSession PagoPar:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -179,7 +180,7 @@ class PagoParProvider extends PaymentProvider {
 
             throw new Error('Error al crear suscripción en PagoPar');
         } catch (error) {
-            console.error('Error en createSubscription PagoPar:', error.response?.data || error.message);
+            logger.error('Error en createSubscription PagoPar:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -215,7 +216,7 @@ class PagoParProvider extends PaymentProvider {
                 canceledAt: new Date()
             };
         } catch (error) {
-            console.error('Error en cancelSubscription PagoPar:', error.response?.data || error.message);
+            logger.error('Error en cancelSubscription PagoPar:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -249,7 +250,7 @@ class PagoParProvider extends PaymentProvider {
                 status: 'activa'
             };
         } catch (error) {
-            console.error('Error en reactivateSubscription PagoPar:', error.response?.data || error.message);
+            logger.error('Error en reactivateSubscription PagoPar:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -275,7 +276,7 @@ class PagoParProvider extends PaymentProvider {
             if (signature && payloadObj.firma) {
                 const expectedSignature = this.generateSignature(payloadObj);
                 if (signature !== expectedSignature && payloadObj.firma !== expectedSignature) {
-                    console.warn('Firma de webhook no coincide, pero continuamos');
+                    logger.warn('Firma de webhook no coincide, pero continuamos');
                 }
             }
 
@@ -288,7 +289,7 @@ class PagoParProvider extends PaymentProvider {
                 data: payloadObj
             };
         } catch (error) {
-            console.error('Error en verifyWebhook PagoPar:', error.message);
+            logger.error('Error en verifyWebhook PagoPar:', error.message);
             throw error;
         }
     }
@@ -338,7 +339,7 @@ class PagoParProvider extends PaymentProvider {
 
             throw new Error('Suscripción no encontrada');
         } catch (error) {
-            console.error('Error en getSubscription PagoPar:', error.response?.data || error.message);
+            logger.error('Error en getSubscription PagoPar:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -377,7 +378,7 @@ class PagoParProvider extends PaymentProvider {
 
             throw new Error('Error al crear plan en PagoPar');
         } catch (error) {
-            console.error('Error en createPlan PagoPar:', error.response?.data || error.message);
+            logger.error('Error en createPlan PagoPar:', error.response?.data || error.message);
             throw error;
         }
     }

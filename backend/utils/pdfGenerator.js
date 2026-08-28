@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Generar PDF de factura
+const logger = require('../config/logger');
 exports.generateInvoicePDF = async (invoiceData, outputPath) => {
   return new Promise((resolve, reject) => {
     try {
@@ -83,12 +84,12 @@ exports.generateInvoicePDF = async (invoiceData, outputPath) => {
       doc.end();
 
       stream.on('finish', () => {
-        console.log('✅ PDF generado correctamente');
+        logger.info('✅ PDF generado correctamente');
         resolve(outputPath);
       });
 
       stream.on('error', (error) => {
-        console.error('❌ Error al generar PDF:', error);
+        logger.error('❌ Error al generar PDF:', error);
         reject(error);
       });
 
@@ -161,7 +162,7 @@ exports.generatePrescriptionPDF = async (prescriptionData, outputPath) => {
       doc.end();
 
       stream.on('finish', () => {
-        console.log('✅ PDF de receta generado correctamente');
+        logger.info('✅ PDF de receta generado correctamente');
         resolve(outputPath);
       });
 

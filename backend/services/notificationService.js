@@ -1,5 +1,6 @@
 // backend/services/notificationService.js
 const nodemailer = require('nodemailer');
+const logger = require('../config/logger');
 const { Appointment, Pet, Client } = require('../models');
 const { Op } = require('sequelize');
 
@@ -53,9 +54,9 @@ const sendAppointmentReminder = async () => {
     try {
       await transporter.sendMail(mailOptions);
       await appointment.update({ reminderSent: true });
-      console.log(`Recordatorio enviado a ${owner.email}`);
+      logger.info(`Recordatorio enviado a ${owner.email}`);
     } catch (error) {
-      console.error(`Error enviando recordatorio a ${owner.email}:`, error);
+      logger.error(`Error enviando recordatorio a ${owner.email}:`, error);
     }
   }
 };
@@ -100,17 +101,17 @@ const sendPetReminders = async () => {
 
           try {
             await transporter.sendMail(mailOptions);
-            console.log(`Recordatorio de '${reminder.type}' para ${pet.name} enviado a ${pet.owner.email}`);
+            logger.info(`Recordatorio de '${reminder.type}' para ${pet.name} enviado a ${pet.owner.email}`);
             // Note: We are not flagging individual reminders as "sent" to keep it simple.
             // The logic relies on the cron job running once a day for a specific future date.
           } catch (error) {
-            console.error(`Error enviando recordatorio para ${pet.name} a ${pet.owner.email}:`, error);
+            logger.error(`Error enviando recordatorio para ${pet.name} a ${pet.owner.email}:`, error);
           }
         }
       }
     }
   } catch (error) {
-    console.error('Error general al procesar recordatorios de mascotas:', error);
+    logger.error('Error general al procesar recordatorios de mascotas:', error);
   }
 };
 

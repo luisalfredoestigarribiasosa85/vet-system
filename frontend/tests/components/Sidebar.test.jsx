@@ -1,18 +1,19 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Sidebar from '../../src/components/layout/Sidebar';
 
-// Mock AuthContext
+// Mock del hook real que consume Sidebar (hooks/useAuth)
+const mockLogout = vi.fn();
 const mockAuthContext = {
     user: {
         name: 'Test User',
         role: 'admin',
     },
-    logout: vi.fn(),
+    logout: mockLogout,
 };
 
-vi.mock('../../src/contexts/AuthContext', () => ({
+vi.mock('../../src/hooks/useAuth', () => ({
     useAuth: () => mockAuthContext,
 }));
 
@@ -25,11 +26,16 @@ const renderSidebar = () => {
 };
 
 describe('Sidebar Component', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it('debe renderizar el sidebar correctamente', () => {
         renderSidebar();
 
         // Verificar que el título esté presente
-        expect(screen.getByText(/Sistema Veterinaria/i)).toBeInTheDocument();
+        expect(screen.getByText(/VetSystem/i)).toBeInTheDocument();
+        expect(screen.getByText(/Sistema de Gestión/i)).toBeInTheDocument();
     });
 
     it('debe mostrar el nombre del usuario', () => {

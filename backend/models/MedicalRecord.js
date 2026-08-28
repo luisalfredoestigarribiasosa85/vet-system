@@ -65,7 +65,15 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
   }
 }, {
   tableName: 'medical_records',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    // Dashboard/listados: WHERE organizationId ... ORDER BY createdAt DESC
+    { name: 'idx_medical_records_org_created', fields: ['organizationId', 'createdAt'] },
+    // Historial por mascota
+    { name: 'idx_medical_records_pet_id', fields: ['petId'] },
+    // Registros por veterinario
+    { name: 'idx_medical_records_vet_id', fields: ['vetId'] },
+  ]
 });
 
 module.exports = MedicalRecord;

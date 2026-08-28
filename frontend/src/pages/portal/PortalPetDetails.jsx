@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import portalApi from '../../api/portalApi';
 import Loader from '../../components/common/Loader';
@@ -10,11 +10,7 @@ const PortalPetDetails = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('records'); // 'records' or 'vaccinations'
 
-  useEffect(() => {
-    loadData();
-  }, [petId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [recordsRes, vaccinationsRes] = await Promise.all([
@@ -28,7 +24,11 @@ const PortalPetDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [petId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getVaccinationStatusColor = (status) => {
     switch (status) {

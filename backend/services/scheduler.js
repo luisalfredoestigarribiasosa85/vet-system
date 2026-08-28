@@ -1,4 +1,5 @@
 // backend/services/scheduler.js
+const logger = require('../config/logger');
 const { sendAppointmentReminder, sendPetReminders } = require('./notificationService');
 
 const REMINDER_HOUR = 9;
@@ -9,10 +10,10 @@ const REMINDER_MILLISECOND = 0;
 let timeoutId = null;
 
 const runReminders = async () => {
-  console.log('🔔 Ejecutando tarea de recordatorios...');
+  logger.info('🔔 Ejecutando tarea de recordatorios...');
   await sendAppointmentReminder();
   await sendPetReminders();
-  console.log('✅ Tareas de recordatorio finalizadas');
+  logger.info('✅ Tareas de recordatorio finalizadas');
 };
 
 const getMillisecondsUntilNextRun = () => {
@@ -35,7 +36,7 @@ const scheduleNextRun = () => {
     try {
       await runReminders();
     } catch (error) {
-      console.error('❌ Error ejecutando recordatorios programados:', error);
+      logger.error('❌ Error ejecutando recordatorios programados:', error);
     } finally {
       scheduleNextRun();
     }

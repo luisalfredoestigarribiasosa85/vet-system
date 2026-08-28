@@ -12,4 +12,17 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Separar librerías pesas en chunks estables para mejor caching:
+        // solo se descargan cuando la ruta que las usa se visita.
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          charts: ['recharts'],
+          calendar: ['react-big-calendar'],
+        },
+      },
+    },
+  },
 })

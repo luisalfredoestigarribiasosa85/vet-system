@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import Login from '../../src/pages/auth/Login';
+import toast from 'react-hot-toast';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -14,13 +15,22 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
-// Mock AuthContext
+// Mock del hook real que consume Login (hooks/useAuth)
 const mockLogin = vi.fn();
-vi.mock('../../src/contexts/AuthContext', () => ({
+vi.mock('../../src/hooks/useAuth', () => ({
     useAuth: () => ({
         login: mockLogin,
         user: null,
+        loading: false,
     }),
+}));
+
+// Mock de react-hot-toast: sin <Toaster> montado no hay DOM que inspeccionar
+vi.mock('react-hot-toast', () => ({
+    default: {
+        success: vi.fn(),
+        error: vi.fn(),
+    },
 }));
 
 const renderLogin = () => {
@@ -34,12 +44,13 @@ const renderLogin = () => {
 describe('Login Page', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockLogin.mockResolvedValue({ success: true });
     });
 
-    it('debe renderizar el formulario de login', () => {
+    it('debe renderizar el formulario de login', async () => {
         renderLogin();
 
-        expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
+        expect(await screen.findByLabelText(/usuario/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
     });
@@ -48,7 +59,7 @@ describe('Login Page', () => {
         const user = userEvent.setup();
         renderLogin();
 
-        const usernameInput = screen.getByLabelText(/usuario/i);
+        const usernameInput = await screen.findByLabelText(/usuario/i);
         const passwordInput = screen.getByLabelText(/contraseña/i);
 
         await user.type(usernameInput, 'testuser');
@@ -62,20 +73,18 @@ describe('Login Page', () => {
         const user = userEvent.setup();
         renderLogin();
 
-        const submitButton = screen.getByRole('button', { name: /iniciar sesión/i });
+        const submitButton = await screen.findByRole('button', { name: /iniciar sesión/i });
         await user.click(submitButton);
 
-        // HTML5 validation debería prevenir el submit
+        // La validación HTML5 (required) debería prevenir el submit
         expect(mockLogin).not.toHaveBeenCalled();
     });
 
     it('debe llamar a login con credenciales correctas', async () => {
         const user = userEvent.setup();
-        mockLogin.mockResolvedValue({ success: true });
-
         renderLogin();
 
-        const usernameInput = screen.getByLabelText(/usuario/i);
+        const usernameInput = await screen.findByLabelText(/usuario/i);
         const passwordInput = screen.getByLabelText(/contraseña/i);
         const submitButton = screen.getByRole('button', { name: /iniciar sesión/i });
 
@@ -83,21 +92,23 @@ describe('Login Page', () => {
         await user.type(passwordInput, 'password123');
         await user.click(submitButton);
 
+        // El contexto real firma login(username, password)
         await waitFor(() => {
-            expect(mockLogin).toHaveBeenCalledWith({
-                username: 'testuser',
-                password: 'password123',
-            });
+            expect(mockLogin).toHaveBeenCalledWith('testuser', 'password123');
         });
+        await waitFor(() => {
+            expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+        });
+        expect(toast.success).toHaveBeenCalledWith('Inicio de sesión exitoso');
     });
 
     it('debe mostrar mensaje de error en login fallido', async () => {
         const user = userEvent.setup();
-        mockLogin.mockRejectedValue(new Error('Credenciales inválidas'));
+        mockLogin.mockResolvedValue({ success: false, message: 'Credenciales inválidas' });
 
         renderLogin();
 
-        const usernameInput = screen.getByLabelText(/usuario/i);
+        const usernameInput = await screen.findByLabelText(/usuario/i);
         const passwordInput = screen.getByLabelText(/contraseña/i);
         const submitButton = screen.getByRole('button', { name: /iniciar sesión/i });
 
@@ -106,7 +117,8 @@ describe('Login Page', () => {
         await user.click(submitButton);
 
         await waitFor(() => {
-            expect(screen.getByText(/error/i)).toBeInTheDocument();
+            expect(toast.error).toHaveBeenCalledWith('Credenciales inválidas');
         });
+        expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
     });
 });

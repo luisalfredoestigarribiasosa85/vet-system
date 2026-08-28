@@ -67,7 +67,13 @@ const Pet = sequelize.define('Pet', {
   }
 }, {
   tableName: 'pets',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    // Listado principal: WHERE organizationId AND isActive ORDER BY createdAt DESC
+    { name: 'idx_pets_org_active_created', fields: ['organizationId', 'isActive', 'createdAt'] },
+    // Mascotas por dueño
+    { name: 'idx_pets_client_id', fields: ['clientId'] },
+  ]
 });
 
 module.exports = Pet;

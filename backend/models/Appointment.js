@@ -128,7 +128,17 @@ const Appointment = sequelize.define('Appointment', {
   }
 }, {
   tableName: 'appointments',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    // Agenda multi-tenant: WHERE organizationId AND date ...
+    { name: 'idx_appointments_org_date', fields: ['organizationId', 'date'] },
+    // Agenda por veterinario ordenada por inicio
+    { name: 'idx_appointments_vet_start', fields: ['vetId', 'startDateTime'] },
+    // Historial por mascota
+    { name: 'idx_appointments_pet_id', fields: ['petId'] },
+    // Scheduler global de recordatorios (consulta por fecha sin filtro de organización)
+    { name: 'idx_appointments_date', fields: ['date'] },
+  ]
 });
 
 Appointment.beforeValidate(computeTimeFields);

@@ -5,6 +5,8 @@ const { requireOrganization } = require('../middleware/multiTenantMiddleware');
 const Pet = require('../models/Pet');
 const Client = require('../models/Client');
 
+const { parsePagination, paginateResponse } = require('../utils/pagination');
+
 // Aislamiento multi-tenant: exige organización activa para todas las rutas de mascotas
 router.use(protect, requireOrganization);
 
@@ -13,7 +15,7 @@ router.get('/', protect, async (req, res) => {
   try {
     const organizationId = req.user?.organizationId ?? null;
 
-    const pets = await Pet.findAll({
+    const baseOptions = {
       where: {
         ...(organizationId ? { organizationId } : {}),
         isActive: true
@@ -24,7 +26,20 @@ router.get('/', protect, async (req, res) => {
         attributes: ['id', 'name', 'phone', 'email']
       }],
       order: [['createdAt', 'DESC']]
-    });
+    };
+
+    // Paginación retrocompatible: sin ?page/?limit se mantiene el array plano completo
+    const pagination = parsePagination(req);
+    if (pagination) {
+      const { rows, count } = await Pet.findAndCountAll({
+        ...baseOptions,
+        limit: pagination.limit,
+        offset: pagination.offset
+      });
+      return res.json(paginateResponse(rows, count, pagination));
+    }
+
+    const pets = await Pet.findAll(baseOptions);
     res.json(pets);
   } catch (error) {
     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeDatabaseError') {

@@ -46,7 +46,13 @@ const Payment = sequelize.define('Payment', {
     }
 }, {
     tableName: 'payments',
-    timestamps: true
+    timestamps: true,
+    indexes: [
+        // Pagos por factura (include en detalle/listado de facturas)
+        { name: 'idx_payments_invoice_id', fields: ['invoiceId'] },
+        // Reportes mensuales/income por rango de fechas
+        { name: 'idx_payments_payment_date', fields: ['paymentDate'] },
+    ]
 });
 
 module.exports = Payment;

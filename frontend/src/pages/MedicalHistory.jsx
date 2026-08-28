@@ -6,6 +6,8 @@ import WeightChart from '../components/medical/WeightChart';
 import MedicalTimeline from '../components/medical/MedicalTimeline';
 import AllergiesSection from '../components/medical/AllergiesSection';
 import SurgeriesSection from '../components/medical/SurgeriesSection';
+import { Plus } from 'lucide-react';
+import NewConsultationModal from '../components/medical/NewConsultationModal';
 
 const MedicalHistory = () => {
   const { petId } = useParams();
@@ -14,6 +16,7 @@ const MedicalHistory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('timeline'); // timeline, weight, allergies, surgeries
+  const [showNewRecord, setShowNewRecord] = useState(false);
 
   useEffect(() => {
     fetchHistory();
@@ -97,9 +100,20 @@ const MedicalHistory = () => {
             <span>Volver a Mascotas</span>
           </Link>
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2">
-              Historial Médico
-            </h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">
+                Historial Médico
+              </h1>
+              <button
+                onClick={() => setShowNewRecord(true)}
+                className="flex-shrink-0 inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-3 py-2 rounded-lg transition shadow-sm"
+              >
+                <Plus size={16} />
+                <span className="hidden sm:inline">Nueva Consulta</span>
+                <span className="sm:hidden">Consulta</span>
+              </button>
+            </div>
+            <div className="h-2" />
             <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base text-gray-600">
               <span className="font-semibold text-gray-800">{pet?.name}</span>
               {pet && (
@@ -119,6 +133,14 @@ const MedicalHistory = () => {
             </div>
           </div>
         </div>
+
+        <NewConsultationModal
+          isOpen={showNewRecord}
+          onClose={() => setShowNewRecord(false)}
+          petId={petId}
+          petName={pet?.name}
+          onSaved={fetchHistory}
+        />
 
       {/* Alerta de alergias graves */}
       {allergies.some(a => a.severity === 'grave') && (

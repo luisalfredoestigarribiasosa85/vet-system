@@ -11,9 +11,12 @@
     "test:watch": "jest --watch --setupFilesAfterEnv=./tests/setup.js",
     "test:coverage": "jest --coverage --setupFilesAfterEnv=./tests/setup.js",
     "seed": "node scripts/seed.js",
+    "seed:services": "node scripts/seed-default-services.js",
+    "seed:inventory": "node scripts/seed-default-inventory.js",
     "backfill:appointments": "node scripts/backfillAppointments.js",
     "migrate-saas": "node scripts/migrate-saas.js",
     "create-plans": "node scripts/create-default-plans.js",
+    "db:indexes": "node scripts/add-performance-indexes.js",
     "setup-saas": "npm run migrate-saas && npm run create-plans"
   },
   "keywords": [
@@ -29,7 +32,6 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.2.1",
     "helmet": "^8.1.0",
     "joi": "^18.0.1",
@@ -43,10 +45,8 @@
     "stripe": "^17.3.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "vet-system-backend": "file:",
     "winston": "^3.18.3",
-    "winston-daily-rotate-file": "^5.0.0",
-    "xss-clean": "^0.1.4"
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

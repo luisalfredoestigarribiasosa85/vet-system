@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
-import moment from 'moment';
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { es } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './VaccinationCalendar.css';
 
-// Configurar moment en español
-moment.locale('es');
-const localizer = momentLocalizer(moment);
+// Localizador de fechas con date-fns (locale español)
+const locales = { es };
+const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
 const VaccinationCalendar = ({ vaccinations, onSelectEvent }) => {
     const [view, setView] = useState('month');

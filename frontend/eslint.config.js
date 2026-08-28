@@ -26,4 +26,11 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // Los archivos de config (Vite/Vitest) se ejecutan en Node y usan __dirname
+    files: ['*.config.js', '**/*.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

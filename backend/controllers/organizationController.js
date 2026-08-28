@@ -1,3 +1,4 @@
+const logger = require('../config/logger');
 const { Organization, User, Subscription, Plan } = require('../models');
 const { Op } = require('sequelize');
 
@@ -72,7 +73,7 @@ exports.createOrganization = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al crear organización:', error);
+        logger.error('Error al crear organización:', error);
         res.status(500).json({ message: 'Error al crear organización' });
     }
 };
@@ -133,7 +134,7 @@ exports.getOrganizations = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al obtener organizaciones:', error);
+        logger.error('Error al obtener organizaciones:', error);
         res.status(500).json({ message: 'Error al obtener organizaciones' });
     }
 };
@@ -173,7 +174,7 @@ exports.getCurrentOrganization = async (req, res) => {
         res.json(organization);
 
     } catch (error) {
-        console.error('Error al obtener organización:', error);
+        logger.error('Error al obtener organización:', error);
         res.status(500).json({ message: 'Error al obtener organización' });
     }
 };
@@ -224,7 +225,7 @@ exports.updateOrganization = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al actualizar organización:', error);
+        logger.error('Error al actualizar organización:', error);
         res.status(500).json({ message: 'Error al actualizar organización' });
     }
 };
@@ -271,7 +272,7 @@ exports.inviteUser = async (req, res) => {
         });
 
         // TODO: Enviar email de invitación
-        console.log(`Invitación enviada a ${email} con token ${invitationToken}`);
+        logger.info(`Invitación enviada a ${email} con token ${invitationToken}`);
 
         res.json({
             message: 'Invitación enviada exitosamente',
@@ -279,7 +280,7 @@ exports.inviteUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al invitar usuario:', error);
+        logger.error('Error al invitar usuario:', error);
         res.status(500).json({ message: 'Error al invitar usuario' });
     }
 };
@@ -324,7 +325,7 @@ exports.getOrganizationUsage = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al obtener métricas de uso:', error);
+        logger.error('Error al obtener métricas de uso:', error);
         res.status(500).json({ message: 'Error al obtener métricas de uso' });
     }
 };

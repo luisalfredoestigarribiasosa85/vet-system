@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const models = require('../models');
+const logger = require('../config/logger');
 const { computeSlot, ensureNoConflicts } = require('../utils/appointmentHelpers');
 
 const {
@@ -121,7 +122,7 @@ exports.registerClient = async (req, res) => {
       user: sanitizeUser(user, client),
     });
   } catch (error) {
-    console.error('Error en registerClient:', error);
+    logger.error('Error en registerClient:', error);
     res.status(500).json({ message: 'Error al registrar cliente', error: error.message });
   }
 };
@@ -170,7 +171,7 @@ exports.getProfile = async (req, res) => {
       appointments,
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al obtener perfil' });
   }
 };
@@ -201,7 +202,7 @@ exports.getPets = async (req, res) => {
 
     res.json(pets);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al obtener mascotas' });
   }
 };
@@ -234,7 +235,7 @@ exports.getPetRecords = async (req, res) => {
 
     res.json({ pet, records });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al obtener historial medico' });
   }
 };
@@ -266,7 +267,7 @@ exports.getAppointments = async (req, res) => {
 
     res.json(appointments);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al obtener citas' });
   }
 };
@@ -454,7 +455,7 @@ exports.cancelAppointment = async (req, res) => {
 
     res.json({ message: 'Cita cancelada correctamente' });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al cancelar la cita' });
   }
 };
@@ -467,7 +468,7 @@ exports.getAvailablePlans = async (req, res) => {
     });
     res.json(plans);
   } catch (error) {
-    console.error('Error fetching plans', error);
+    logger.error('Error fetching plans', error);
     res.status(500).json({ message: 'Error al obtener planes' });
   }
 };
@@ -491,7 +492,7 @@ exports.getClientPlanHistory = async (req, res) => {
 
     res.json(purchases);
   } catch (error) {
-    console.error('Error fetching plan history', error);
+    logger.error('Error fetching plan history', error);
     res.status(500).json({ message: 'Error al obtener historial de planes' });
   }
 };
@@ -539,7 +540,7 @@ exports.createPlanCheckout = async (req, res) => {
       message: 'Pago mock creado. Usa la confirmacion para simular Bancard.',
     });
   } catch (error) {
-    console.error('Error creating plan checkout', error);
+    logger.error('Error creating plan checkout', error);
     res.status(500).json({ message: 'Error al iniciar pago del plan' });
   }
 };
@@ -582,7 +583,7 @@ exports.confirmPlanPayment = async (req, res) => {
 
     res.json(purchase);
   } catch (error) {
-    console.error('Error confirming plan payment', error);
+    logger.error('Error confirming plan payment', error);
     res.status(500).json({ message: 'Error al confirmar pago' });
   }
 };
@@ -617,7 +618,7 @@ exports.getPetVaccinations = async (req, res) => {
 
     res.json({ pet, vaccinations });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al obtener vacunas' });
   }
 };
@@ -648,7 +649,7 @@ exports.getInvoices = async (req, res) => {
 
     res.json(invoices);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al obtener facturas' });
   }
 };
@@ -700,12 +701,12 @@ exports.downloadInvoicePDF = async (req, res) => {
 
     res.download(pdfPath, `factura-${invoice.id}.pdf`, (err) => {
       if (err) {
-        console.error('Error al descargar PDF:', err);
+        logger.error('Error al descargar PDF:', err);
         res.status(500).json({ message: 'Error al descargar PDF' });
       }
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al generar PDF de factura' });
   }
 };

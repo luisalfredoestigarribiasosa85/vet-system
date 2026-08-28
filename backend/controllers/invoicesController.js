@@ -5,8 +5,10 @@ const Pet = require('../models/Pet');
 const User = require('../models/User');
 const { Op } = require('sequelize');
 const PDFDocument = require('pdfkit');
+const { parsePagination, paginateResponse } = require('../utils/pagination');
 
 // Aislamiento multi-tenant: el organizationId proviene siempre del token
+const logger = require('../config/logger');
 const getOrgFilter = (req) => {
     const organizationId = req.user?.organizationId ?? null;
     return organizationId ? { organizationId } : {};
@@ -52,7 +54,7 @@ exports.getAllInvoices = async (req, res) => {
             };
         }
 
-        const invoices = await Invoice.findAll({
+        const baseOptions = {
             where,
             include: [
                 {
@@ -72,11 +74,25 @@ exports.getAllInvoices = async (req, res) => {
                 }
             ],
             order: [['issueDate', 'DESC']]
-        });
+        };
+
+        // Paginación retrocompatible: sin ?page/?limit se mantiene el array plano completo
+        const pagination = parsePagination(req);
+        if (pagination) {
+            const { rows, count } = await Invoice.findAndCountAll({
+                ...baseOptions,
+                distinct: true, // el include 1:N de payments multiplica filas
+                limit: pagination.limit,
+                offset: pagination.offset
+            });
+            return res.json(paginateResponse(rows, count, pagination));
+        }
+
+        const invoices = await Invoice.findAll(baseOptions);
 
         res.json(invoices);
     } catch (error) {
-        console.error('Error al obtener facturas:', error);
+        logger.error('Error al obtener facturas:', error);
         res.status(500).json({ message: 'Error al obtener facturas' });
     }
 };
@@ -125,7 +141,7 @@ exports.getInvoiceById = async (req, res) => {
 
         res.json(invoice);
     } catch (error) {
-        console.error('Error al obtener factura:', error);
+        logger.error('Error al obtener factura:', error);
         res.status(500).json({ message: 'Error al obtener factura' });
     }
 };
@@ -235,7 +251,7 @@ exports.createInvoice = async (req, res) => {
 
         res.status(201).json(invoiceWithRelations);
     } catch (error) {
-        console.error('Error al crear factura:', error);
+        logger.error('Error al crear factura:', error);
         res.status(500).json({ message: 'Error al crear factura', error: error.message });
     }
 };
@@ -315,7 +331,7 @@ exports.updateInvoice = async (req, res) => {
 
         res.json(invoice);
     } catch (error) {
-        console.error('Error al actualizar factura:', error);
+        logger.error('Error al actualizar factura:', error);
         res.status(500).json({ message: 'Error al actualizar factura' });
     }
 };
@@ -344,7 +360,7 @@ exports.cancelInvoice = async (req, res) => {
 
         res.json({ message: 'Factura cancelada exitosamente' });
     } catch (error) {
-        console.error('Error al cancelar factura:', error);
+        logger.error('Error al cancelar factura:', error);
         res.status(500).json({ message: 'Error al cancelar factura' });
     }
 };
@@ -425,7 +441,7 @@ exports.addPayment = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error al registrar pago:', error);
+        logger.error('Error al registrar pago:', error);
         res.status(500).json({ message: 'Error al registrar pago', error: error.message });
     }
 };
@@ -555,7 +571,7 @@ exports.generateInvoicePDF = async (req, res) => {
 
         doc.end();
     } catch (error) {
-        console.error('Error al generar PDF:', error);
+        logger.error('Error al generar PDF:', error);
         if (!res.headersSent) {
             res.status(500).json({ message: 'Error al generar PDF de factura' });
         }
@@ -601,8 +617,8 @@ exports.getPaymentStats = async (req, res) => {
         const paymentsByMethod = await Payment.findAll({
             attributes: [
                 'paymentMethod',
-                [Payment.sequelize.fn('COUNT', Payment.sequelize.col('id')), 'count'],
-                [Payment.sequelize.fn('SUM', Payment.sequelize.cast(Payment.sequelize.col('amount'), 'DECIMAL')), 'total']
+                [Payment.sequelize.fn('COUNT', Payment.sequelize.col('Payment.id')), 'count'],
+                [Payment.sequelize.fn('SUM', Payment.sequelize.cast(Payment.sequelize.col('Payment.amount'), 'DECIMAL')), 'total']
             ],
             include: [{
                 model: Invoice,
@@ -626,8 +642,8 @@ exports.getPaymentStats = async (req, res) => {
                 }
             },
             attributes: [
-                [Payment.sequelize.fn('DATE_TRUNC', 'month', Payment.sequelize.col('paymentDate')), 'month'],
-                [Payment.sequelize.fn('SUM', Payment.sequelize.col('amount')), 'total']
+                [Payment.sequelize.fn('DATE_TRUNC', 'month', Payment.sequelize.col('Payment.paymentDate')), 'month'],
+                [Payment.sequelize.fn('SUM', Payment.sequelize.col('Payment.amount')), 'total']
             ],
             include: [{
                 model: Invoice,
@@ -636,8 +652,8 @@ exports.getPaymentStats = async (req, res) => {
                 where: orgFilter,
                 required: true,
             }],
-            group: [Payment.sequelize.fn('DATE_TRUNC', 'month', Payment.sequelize.col('paymentDate'))],
-            order: [[Payment.sequelize.fn('DATE_TRUNC', 'month', Payment.sequelize.col('paymentDate')), 'ASC']],
+            group: [Payment.sequelize.fn('DATE_TRUNC', 'month', Payment.sequelize.col('Payment.paymentDate'))],
+            order: [[Payment.sequelize.fn('DATE_TRUNC', 'month', Payment.sequelize.col('Payment.paymentDate')), 'ASC']],
             raw: true
         });
 
@@ -650,7 +666,7 @@ exports.getPaymentStats = async (req, res) => {
             monthlyIncome
         });
     } catch (error) {
-        console.error('Error al obtener estadísticas:', error);
+        logger.error('Error al obtener estadísticas:', error);
         res.status(500).json({ message: 'Error al obtener estadísticas' });
     }
 };

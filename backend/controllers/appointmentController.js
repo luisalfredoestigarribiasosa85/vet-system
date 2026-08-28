@@ -1,4 +1,6 @@
+const logger = require('../config/logger');
 const { Appointment, Pet } = require('../models');
+const { parsePagination, paginateResponse } = require('../utils/pagination');
 
 // Aislamiento multi-tenant: el organizationId proviene siempre del token
 const getOrgFilter = (req) => {
@@ -11,16 +13,29 @@ const getOrgFilter = (req) => {
 // @access  Private
 exports.getAppointments = async (req, res) => {
   try {
-    const appointments = await Appointment.findAll({
+    const baseOptions = {
       where: {
         ...getOrgFilter(req),
         isActive: true
       },
       order: [['createdAt', 'DESC']]
-    });
+    };
+
+    // Paginación retrocompatible: sin ?page/?limit se mantiene el array plano completo
+    const pagination = parsePagination(req);
+    if (pagination) {
+      const { rows, count } = await Appointment.findAndCountAll({
+        ...baseOptions,
+        limit: pagination.limit,
+        offset: pagination.offset
+      });
+      return res.json(paginateResponse(rows, count, pagination));
+    }
+
+    const appointments = await Appointment.findAll(baseOptions);
     res.json(appointments);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al obtener las citas' });
   }
 };
@@ -41,7 +56,7 @@ exports.getAppointmentById = async (req, res) => {
     }
     res.json(appointment);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al obtener la cita' });
   }
 };
@@ -77,7 +92,7 @@ exports.createAppointment = async (req, res) => {
 
     res.status(201).json(appointment);
   } catch (error) {
-    console.error('Error al crear cita:', error);
+    logger.error('Error al crear cita:', error);
     res.status(500).json({ message: 'Error al crear la cita' });
   }
 };
@@ -99,7 +114,7 @@ exports.updateAppointment = async (req, res) => {
     await appointment.update(req.body);
     res.json(appointment);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al actualizar la cita' });
   }
 };
@@ -121,7 +136,7 @@ exports.deleteAppointment = async (req, res) => {
     await appointment.destroy();
     res.json({ message: 'Cita eliminada correctamente' });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error al eliminar la cita' });
   }
 };

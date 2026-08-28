@@ -1,5 +1,6 @@
 const Client = require('../models/Client');
 const Pet = require('../models/Pet');
+const { parsePagination, paginateResponse } = require('../utils/pagination');
 
 // Aislamiento multi-tenant estricto:
 // - El organizationId SIEMPRE proviene del token (req.user.organizationId),
@@ -19,7 +20,7 @@ exports.getClients = async (req, res) => {
   try {
     const organizationId = getRequiredOrgId(req);
 
-    const clients = await Client.findAll({
+    const baseOptions = {
       where: {
         ...(organizationId ? { organizationId } : {}),
         isActive: true,
@@ -31,7 +32,21 @@ exports.getClients = async (req, res) => {
         required: false,
       }],
       order: [['createdAt', 'DESC']],
-    });
+    };
+
+    // Paginación retrocompatible: sin ?page/?limit se mantiene el array plano completo
+    const pagination = parsePagination(req);
+    if (pagination) {
+      const { rows, count } = await Client.findAndCountAll({
+        ...baseOptions,
+        distinct: true, // el include 1:N de mascotas multiplica filas
+        limit: pagination.limit,
+        offset: pagination.offset,
+      });
+      return res.json(paginateResponse(rows, count, pagination));
+    }
+
+    const clients = await Client.findAll(baseOptions);
 
     res.json(clients);
   } catch (error) {

@@ -1,3 +1,4 @@
+const logger = require('../config/logger');
 const { Organization, Subscription, Plan } = require('../models');
 
 /**
@@ -41,7 +42,7 @@ const requireOrganization = async (req, res, next) => {
         next();
 
     } catch (error) {
-        console.error('Error en middleware requireOrganization:', error);
+        logger.error('Error en middleware requireOrganization:', error);
         res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
@@ -100,7 +101,7 @@ const checkPlanLimits = (resourceType) => {
             next();
 
         } catch (error) {
-            console.error('Error en middleware checkPlanLimits:', error);
+            logger.error('Error en middleware checkPlanLimits:', error);
             res.status(500).json({ message: 'Error interno del servidor' });
         }
     };
@@ -133,7 +134,7 @@ const updateUsageMetrics = (resourceType, action = 'increment') => {
             next();
 
         } catch (error) {
-            console.error('Error en middleware updateUsageMetrics:', error);
+            logger.error('Error en middleware updateUsageMetrics:', error);
             // No bloquear la operación por error en métricas
             next();
         }

@@ -2,6 +2,7 @@ const { Sequelize } = require('sequelize');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
+const logger = require('./logger');
 const getDatabaseConfig = () => {
   if (process.env.DATABASE_URL) {
     return {
@@ -62,9 +63,9 @@ const sequelize = databaseConfig.url
 const testConnection = async () => {
   try {
     await sequelize.authenticate();
-    console.log('✅ Conexión a la base de datos establecida correctamente');
+    logger.info('✅ Conexión a la base de datos establecida correctamente');
   } catch (error) {
-    console.error('❌ Error al conectar a la base de datos:', error);
+    logger.error('❌ Error al conectar a la base de datos:', error);
   }
 };
 

@@ -6,11 +6,25 @@ const {
   Client,
   Pet,
   Plan,
-  Inventory,
   Vaccination,
   MedicalRecord,
   Organization,
 } = require('../models');
+const { seedDefaultServices } = require('./seed-default-services');
+const { seedDefaultInventory } = require('./seed-default-inventory');
+
+// Fechas relativas para que los dashboards de demo siempre tengan datos recientes
+const monthsAgo = (months) => {
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  return d;
+};
+
+const daysAgo = (days) => {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d;
+};
 
 const createDatabaseIfMissing = async () => {
   const { database, username, password, host, port } = sequelize.config;
@@ -67,6 +81,14 @@ const seedDatabase = async () => {
     });
 
     console.log('🏢 Organización base creada');
+
+    // Catálogo estándar de servicios para facturación
+    await seedDefaultServices(organization.id);
+    console.log('🧾 Servicios por defecto creados');
+
+    // Stock inicial de inventario
+    await seedDefaultInventory(organization.id);
+    console.log('📦 Inventario inicial creado');
 
     // Crear usuarios
     const users = await User.bulkCreate([
@@ -330,111 +352,8 @@ const seedDatabase = async () => {
 
     console.log('💉 Vacunas creadas');
 
-    // Crear inventario
-    await Inventory.bulkCreate([
-      {
-        name: 'Vacuna Antirrábica',
-        description: 'Vacuna contra rabia para perros y gatos',
-        category: 'Vacunas',
-        quantity: 25,
-        minStock: 10,
-        price: 120000,
-        supplier: 'Laboratorio VetPharma',
-        expiryDate: '2025-12-31'
-      },
-      {
-        name: 'Vacuna Polivalente',
-        description: 'Protección múltiple para perros',
-        category: 'Vacunas',
-        quantity: 18,
-        minStock: 10,
-        price: 150000,
-        supplier: 'Laboratorio VetPharma',
-        expiryDate: '2025-11-30'
-      },
-      {
-        name: 'Otomax Gotas',
-        description: 'Tratamiento para otitis',
-        category: 'Medicamentos',
-        quantity: 8,
-        minStock: 5,
-        price: 85000,
-        supplier: 'Farmacia Veterinaria Central',
-        expiryDate: '2026-06-30'
-      },
-      {
-        name: 'Amoxicilina 500mg',
-        description: 'Antibiótico de amplio espectro',
-        category: 'Medicamentos',
-        quantity: 45,
-        minStock: 20,
-        price: 3500,
-        supplier: 'Droguería MedVet',
-        expiryDate: '2026-03-15'
-      },
-      {
-        name: 'Antiparasitario Interno',
-        description: 'Desparasitante para perros y gatos',
-        category: 'Antiparasitarios',
-        quantity: 30,
-        minStock: 15,
-        price: 45000,
-        supplier: 'Laboratorio PetCare',
-        expiryDate: '2026-08-20'
-      },
-      {
-        name: 'Pipeta Antipulgas',
-        description: 'Tratamiento tópico contra pulgas y garrapatas',
-        category: 'Antiparasitarios',
-        quantity: 50,
-        minStock: 20,
-        price: 65000,
-        supplier: 'Distribuidora Animal Health',
-        expiryDate: '2026-10-15'
-      },
-      {
-        name: 'Shampoo Medicado',
-        description: 'Para problemas dermatológicos',
-        category: 'Higiene',
-        quantity: 12,
-        minStock: 8,
-        price: 55000,
-        supplier: 'PetGrooming Supply',
-        expiryDate: '2027-01-30'
-      },
-      {
-        name: 'Alimento Premium Perros',
-        description: 'Alimento balanceado 15kg',
-        category: 'Alimentos',
-        quantity: 20,
-        minStock: 10,
-        price: 280000,
-        supplier: 'Distribuidora NutriPet',
-        expiryDate: '2025-12-01'
-      },
-      {
-        name: 'Alimento Premium Gatos',
-        description: 'Alimento balanceado 7.5kg',
-        category: 'Alimentos',
-        quantity: 15,
-        minStock: 8,
-        price: 195000,
-        supplier: 'Distribuidora NutriPet',
-        expiryDate: '2025-11-15'
-      },
-      {
-        name: 'Vitaminas Multiples',
-        description: 'Suplemento vitamínico completo',
-        category: 'Suplementos',
-        quantity: 22,
-        minStock: 10,
-        price: 75000,
-        supplier: 'Farmacia Veterinaria Central',
-        expiryDate: '2026-07-30'
-      }
-    ]);
-
-    console.log('📦 Inventario creado');
+    // (El inventario se genera más arriba con seedDefaultInventory,
+    //  que asigna correctamente la organización a cada producto)
 
     await Plan.bulkCreate([
       {
@@ -452,45 +371,49 @@ const seedDatabase = async () => {
       // Registros para Max (Golden Retriever)
       {
         petId: pets[0].id,
+        organizationId: organization.id,
         vetId: users[1].id,
         diagnosis: 'Chequeo general anual',
         treatment: 'Vacunación antirrábica y desparasitación',
         weight: 32.5,
         temperature: 38.5,
         notes: 'Mascota en excelente estado de salud.',
-        createdAt: new Date('2025-03-15')
+        createdAt: monthsAgo(5)
       },
       {
         petId: pets[0].id,
+        organizationId: organization.id,
         vetId: users[2].id,
         diagnosis: 'Otitis externa leve',
         treatment: 'Gotas óticas antibióticas por 7 días',
         weight: 33.0,
         temperature: 38.8,
         notes: 'Infección leve del oído derecho.',
-        createdAt: new Date('2025-06-10')
+        createdAt: monthsAgo(2)
       },
       // Registros para Luna (Gato Siamés)
       {
         petId: pets[1].id,
+        organizationId: organization.id,
         vetId: users[2].id,
         diagnosis: 'Vacunación triple felina',
         treatment: 'Aplicación de vacuna triple felina',
         weight: 4.2,
         temperature: 38.7,
         notes: 'Primera dosis de vacuna.',
-        createdAt: new Date('2025-04-05')
+        createdAt: monthsAgo(1)
       },
       // Registros para Rocky (Bulldog)
       {
         petId: pets[2].id,
+        organizationId: organization.id,
         vetId: users[1].id,
         diagnosis: 'Dermatitis alérgica',
         treatment: 'Antihistamínicos y champú medicado',
         weight: 12.5,
         temperature: 38.6,
         notes: 'Alergia alimentaria sospechada.',
-        createdAt: new Date('2025-05-12')
+        createdAt: daysAgo(8)
       }
     ]);
     console.log('🏥 Registros médicos creados');

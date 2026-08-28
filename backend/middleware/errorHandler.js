@@ -1,6 +1,10 @@
+const logger = require('../config/logger');
+
 const errorHandler = (err, req, res, next) => {
-    console.error(err.stack);
-  
+  logger.error(`${err.statusCode || 500} - ${err.message} | ${req.method} ${req.originalUrl}`, {
+    stack: err.stack,
+  });
+
     const error = {
       message: err.message || 'Error del servidor',
       status: err.statusCode || 500

@@ -6,7 +6,7 @@ import Loader from '../components/common/Loader';
 
 const Subscription = () => {
   const [loading, setLoading] = useState(true);
-  const [organization, setOrganization] = useState(null);
+  const [, setOrganization] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [plans, setPlans] = useState([]);
   const [usage, setUsage] = useState({});
