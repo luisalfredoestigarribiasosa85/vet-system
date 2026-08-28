@@ -67,6 +67,10 @@ const PlanPurchase = sequelize.define('PlanPurchase', {
 }, {
   tableName: 'plan_purchases',
   timestamps: true,
+  indexes: [
+    // Compras por cliente (portal)
+    { name: 'idx_plan_purchases_client_id', fields: ['clientId'] },
+  ]
 });
 
 module.exports = PlanPurchase;

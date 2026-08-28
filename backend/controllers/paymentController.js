@@ -1,3 +1,4 @@
+const logger = require('../config/logger');
 const { PlanPurchase, Plan, Client, Pet } = require('../models');
 
 // Aislamiento multi-tenant: PlanPurchase no tiene organizationId propio,
@@ -24,7 +25,7 @@ exports.getPlanPurchases = async (req, res) => {
     });
     res.json(purchases);
   } catch (error) {
-    console.error('Error fetching plan purchases', error);
+    logger.error('Error fetching plan purchases', error);
     res.status(500).json({ message: 'Error al obtener pagos de planes' });
   }
 };
@@ -61,7 +62,7 @@ exports.updatePlanPurchaseStatus = async (req, res) => {
 
     res.json(purchase);
   } catch (error) {
-    console.error('Error updating plan purchase', error);
+    logger.error('Error updating plan purchase', error);
     res.status(500).json({ message: 'Error al actualizar estado de pago' });
   }
 };

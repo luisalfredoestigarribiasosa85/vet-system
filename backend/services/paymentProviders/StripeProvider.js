@@ -6,6 +6,7 @@ const stripe = require('stripe');
  * Nota: Stripe no está disponible en Paraguay, pero mantenemos esta implementación
  * por si se usa en otros países o para desarrollo
  */
+const logger = require('../../config/logger');
 class StripeProvider extends PaymentProvider {
     constructor(config) {
         super(config);
@@ -48,7 +49,7 @@ class StripeProvider extends PaymentProvider {
                 url: session.url
             };
         } catch (error) {
-            console.error('Error en createCheckoutSession Stripe:', error.message);
+            logger.error('Error en createCheckoutSession Stripe:', error.message);
             throw error;
         }
     }
@@ -90,7 +91,7 @@ class StripeProvider extends PaymentProvider {
                 status: subscription.status
             };
         } catch (error) {
-            console.error('Error en createSubscription Stripe:', error.message);
+            logger.error('Error en createSubscription Stripe:', error.message);
             throw error;
         }
     }
@@ -107,7 +108,7 @@ class StripeProvider extends PaymentProvider {
                 cancelAtPeriodEnd: subscription.cancel_at_period_end
             };
         } catch (error) {
-            console.error('Error en cancelSubscription Stripe:', error.message);
+            logger.error('Error en cancelSubscription Stripe:', error.message);
             throw error;
         }
     }
@@ -123,7 +124,7 @@ class StripeProvider extends PaymentProvider {
                 status: subscription.status
             };
         } catch (error) {
-            console.error('Error en reactivateSubscription Stripe:', error.message);
+            logger.error('Error en reactivateSubscription Stripe:', error.message);
             throw error;
         }
     }
@@ -141,7 +142,7 @@ class StripeProvider extends PaymentProvider {
                 data: event.data.object
             };
         } catch (error) {
-            console.error('Error en verifyWebhook Stripe:', error.message);
+            logger.error('Error en verifyWebhook Stripe:', error.message);
             throw error;
         }
     }
@@ -151,7 +152,7 @@ class StripeProvider extends PaymentProvider {
             const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
             return subscription;
         } catch (error) {
-            console.error('Error en getSubscription Stripe:', error.message);
+            logger.error('Error en getSubscription Stripe:', error.message);
             throw error;
         }
     }
@@ -176,7 +177,7 @@ class StripeProvider extends PaymentProvider {
 
             return price.id;
         } catch (error) {
-            console.error('Error en createPlan Stripe:', error.message);
+            logger.error('Error en createPlan Stripe:', error.message);
             throw error;
         }
     }

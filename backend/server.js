@@ -8,6 +8,7 @@ const { generalLimiter, authLimiter } = require('./middleware/rateLimiter');
 const { sanitizeInputs } = require('./middleware/sanitizer');
 
 const errorHandler = require('./middleware/errorHandler');
+const logger = require('./config/logger');
 
 // Iniciar tareas programadas
 require('./services/scheduler.js');
@@ -53,9 +54,16 @@ app.use('/api', generalLimiter);
 // Servir archivos estáticos (uploads)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Logging simple (hasta que instales Winston)
+// Logging HTTP con Winston (niveles http en producción, debug en desarrollo)
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url} - ${req.ip}`);
+  const start = Date.now();
+  res.on('finish', () => {
+    // Evitar ruido: Swagger UI, archivos estáticos y favicon
+    if (req.originalUrl.startsWith('/api-docs') || req.originalUrl.startsWith('/uploads') || req.path === '/favicon.ico') {
+      return;
+    }
+    logger.http(`${req.method} ${req.originalUrl} ${res.statusCode} - ${Date.now() - start}ms`);
+  });
   next();
 });
 
@@ -119,15 +127,15 @@ const startServer = async () => {
     await testConnection();
     // No usar sync en desarrollo - usar seed.js para crear/actualizar tablas
     // await sequelize.sync({ alter: true }); 
-    console.log('✅ Base de datos lista');
+    logger.info('Base de datos lista');
 
     app.listen(PORT, () => {
-      console.log(`✅ Servidor corriendo en puerto ${PORT}`);
-      console.log(`📍 Modo: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`💡 Tip: Ejecuta 'pnpm run seed' para inicializar la base de datos`);
+      logger.info(`Servidor corriendo en puerto ${PORT}`);
+      logger.info(`Modo: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`Tip: Ejecuta 'pnpm run seed' para inicializar la base de datos`);
     });
   } catch (error) {
-    console.error('❌ Error al iniciar el servidor:', error);
+    logger.error('Error al iniciar el servidor:', error);
     process.exit(1);
   }
 };
@@ -135,7 +143,7 @@ const startServer = async () => {
 startServer();
 
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM recibido, cerrando servidor...');
+  logger.info('SIGTERM recibido, cerrando servidor...');
   await sequelize.close();
   process.exit(0);
 });

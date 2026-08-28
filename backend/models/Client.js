@@ -49,7 +49,13 @@ const Client = sequelize.define('Client', {
   }
 }, {
   tableName: 'clients',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    // Listado principal: WHERE organizationId AND isActive ORDER BY createdAt DESC
+    { name: 'idx_clients_org_active_created', fields: ['organizationId', 'isActive', 'createdAt'] },
+    // Portal: búsqueda de cliente por usuario vinculado
+    { name: 'idx_clients_user_id', fields: ['userId'] },
+  ]
 });
 
 module.exports = Client;

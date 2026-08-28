@@ -1,3 +1,4 @@
+const logger = require('../config/logger');
 const { Vaccination, Pet, User, Client } = require('../models');
 const {
     calculateNextDoseDate,
@@ -371,7 +372,7 @@ const generatePDF = async (req, res) => {
 
         res.send(pdfBuffer);
     } catch (error) {
-        console.error('Error al generar PDF:', error);
+        logger.error('Error al generar PDF:', error);
         res.status(500).json({ message: error.message });
     }
 };

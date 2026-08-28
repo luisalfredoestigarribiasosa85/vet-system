@@ -47,7 +47,11 @@ const Inventory = sequelize.define('Inventory', {
   }
 }, {
   tableName: 'inventory',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    // Listado y alertas: WHERE organizationId AND isActive ...
+    { name: 'idx_inventory_org_active', fields: ['organizationId', 'isActive'] },
+  ]
 });
 
 module.exports = Inventory;

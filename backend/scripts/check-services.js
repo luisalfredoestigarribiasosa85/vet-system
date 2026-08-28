@@ -20,7 +20,7 @@ const checkServices = async () => {
 
         if (services.length === 0) {
             console.log('❌ No hay servicios en la base de datos.');
-            console.log('💡 Ejecuta: node scripts/migrate-payments.js\n');
+            console.log('💡 Ejecuta: pnpm run seed:services\n');
         } else {
             console.log('✅ Servicios encontrados:\n');
             services.forEach((service, index) => {

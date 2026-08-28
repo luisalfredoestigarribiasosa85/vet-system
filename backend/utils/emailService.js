@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 
 // Configurar transportador de email
+const logger = require('../config/logger');
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT,
@@ -15,9 +16,9 @@ const transporter = nodemailer.createTransport({
 const verifyEmailConfig = async () => {
   try {
     await transporter.verify();
-    console.log('✅ Servidor de email configurado correctamente');
+    logger.info('✅ Servidor de email configurado correctamente');
   } catch (error) {
-    console.error('❌ Error en configuración de email:', error.message);
+    logger.error('❌ Error en configuración de email:', error.message);
   }
 };
 
@@ -56,10 +57,10 @@ exports.sendAppointmentReminder = async (clientEmail, appointmentData) => {
     };
     
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Email enviado a ${clientEmail}`);
+    logger.info(`✅ Email enviado a ${clientEmail}`);
     return true;
   } catch (error) {
-    console.error('❌ Error al enviar email:', error);
+    logger.error('❌ Error al enviar email:', error);
     return false;
   }
 };
@@ -95,10 +96,10 @@ exports.sendVaccineReminder = async (clientEmail, vaccineData) => {
     };
     
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Recordatorio de vacuna enviado a ${clientEmail}`);
+    logger.info(`✅ Recordatorio de vacuna enviado a ${clientEmail}`);
     return true;
   } catch (error) {
-    console.error('❌ Error al enviar recordatorio de vacuna:', error);
+    logger.error('❌ Error al enviar recordatorio de vacuna:', error);
     return false;
   }
 };
@@ -155,10 +156,10 @@ exports.sendInvoiceEmail = async (clientEmail, invoiceData) => {
     };
     
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Factura enviada a ${clientEmail}`);
+    logger.info(`✅ Factura enviada a ${clientEmail}`);
     return true;
   } catch (error) {
-    console.error('❌ Error al enviar factura:', error);
+    logger.error('❌ Error al enviar factura:', error);
     return false;
   }
 };

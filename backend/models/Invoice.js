@@ -80,7 +80,15 @@ const Invoice = sequelize.define('Invoice', {
   }
 }, {
   tableName: 'invoices',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    // Listado con filtro de estado y orden por fecha
+    { name: 'idx_invoices_org_status_issue', fields: ['organizationId', 'status', 'issueDate'] },
+    // Listado sin filtro de estado (orden por issueDate DESC)
+    { name: 'idx_invoices_org_issue', fields: ['organizationId', 'issueDate'] },
+    // Facturas por cliente
+    { name: 'idx_invoices_client_id', fields: ['clientId'] },
+  ]
 });
 
 module.exports = Invoice;

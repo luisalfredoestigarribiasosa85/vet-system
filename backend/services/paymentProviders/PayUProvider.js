@@ -5,6 +5,7 @@ const axios = require('axios');
  * Implementación de PayU Latam para procesamiento de pagos
  * Documentación: https://developers.payulatam.com/latam/en/docs/
  */
+const logger = require('../../config/logger');
 class PayUProvider extends PaymentProvider {
     constructor(config) {
         super(config);
@@ -42,7 +43,7 @@ class PayUProvider extends PaymentProvider {
             }
             throw new Error('No se pudo obtener el token de autenticación');
         } catch (error) {
-            console.error('Error al obtener token de PayU:', error.response?.data || error.message);
+            logger.error('Error al obtener token de PayU:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -129,7 +130,7 @@ class PayUProvider extends PaymentProvider {
 
             throw new Error('Error al crear sesión de checkout en PayU');
         } catch (error) {
-            console.error('Error en createCheckoutSession PayU:', error.response?.data || error.message);
+            logger.error('Error en createCheckoutSession PayU:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -201,7 +202,7 @@ class PayUProvider extends PaymentProvider {
 
             throw new Error('Error al crear suscripción en PayU');
         } catch (error) {
-            console.error('Error en createSubscription PayU:', error.response?.data || error.message);
+            logger.error('Error en createSubscription PayU:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -238,7 +239,7 @@ class PayUProvider extends PaymentProvider {
                 canceledAt: new Date()
             };
         } catch (error) {
-            console.error('Error en cancelSubscription PayU:', error.response?.data || error.message);
+            logger.error('Error en cancelSubscription PayU:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -274,7 +275,7 @@ class PayUProvider extends PaymentProvider {
                 status: 'active'
             };
         } catch (error) {
-            console.error('Error en reactivateSubscription PayU:', error.response?.data || error.message);
+            logger.error('Error en reactivateSubscription PayU:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -309,7 +310,7 @@ class PayUProvider extends PaymentProvider {
                 data: payloadObj
             };
         } catch (error) {
-            console.error('Error en verifyWebhook PayU:', error.message);
+            logger.error('Error en verifyWebhook PayU:', error.message);
             throw error;
         }
     }
@@ -359,7 +360,7 @@ class PayUProvider extends PaymentProvider {
 
             throw new Error('Suscripción no encontrada');
         } catch (error) {
-            console.error('Error en getSubscription PayU:', error.response?.data || error.message);
+            logger.error('Error en getSubscription PayU:', error.response?.data || error.message);
             throw error;
         }
     }
@@ -406,7 +407,7 @@ class PayUProvider extends PaymentProvider {
 
             throw new Error('Error al crear plan en PayU');
         } catch (error) {
-            console.error('Error en createPlan PayU:', error.response?.data || error.message);
+            logger.error('Error en createPlan PayU:', error.response?.data || error.message);
             throw error;
         }
     }

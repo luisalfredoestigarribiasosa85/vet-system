@@ -39,7 +39,11 @@ const Service = sequelize.define('Service', {
     }
 }, {
     tableName: 'services',
-    timestamps: true
+    timestamps: true,
+    indexes: [
+        // Catálogo activo por organización
+        { name: 'idx_services_org_active', fields: ['organizationId', 'isActive'] },
+    ]
 });
 
 module.exports = Service;

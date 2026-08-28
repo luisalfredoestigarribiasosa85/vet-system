@@ -12,16 +12,17 @@ const PortalDashboard = () => {
     }
   }, [profile, loading, refreshProfile]);
 
-  if (loading && !profile) {
-    return <Loader fullScreen />;
-  }
-
   const upcoming = useMemo(() => {
     if (!profile?.appointments) return null;
     return profile.appointments
       .filter((appointment) => appointment.status !== 'cancelada')
       .sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`))[0];
   }, [profile]);
+
+  // El early-return va DESPUÉS de todos los hooks (regla rules-of-hooks)
+  if (loading && !profile) {
+    return <Loader fullScreen />;
+  }
 
   return (
     <div className="space-y-6">

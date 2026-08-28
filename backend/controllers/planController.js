@@ -1,5 +1,6 @@
 const { Plan } = require('../models');
 
+const logger = require('../config/logger');
 const sanitizePrice = (value) => {
   if (value === undefined || value === null || value === '') return null;
   const parsed = parseInt(value, 10);
@@ -14,7 +15,7 @@ exports.getPlans = async (req, res) => {
     const plans = await Plan.findAll({ order: [['createdAt', 'ASC']] });
     res.json(plans);
   } catch (error) {
-    console.error('Error fetching plans', error);
+    logger.error('Error fetching plans', error);
     res.status(500).json({ message: 'Error al obtener planes' });
   }
 };
@@ -39,7 +40,7 @@ exports.createPlan = async (req, res) => {
 
     res.status(201).json(plan);
   } catch (error) {
-    console.error('Error creating plan', error);
+    logger.error('Error creating plan', error);
     res.status(500).json({ message: 'Error al crear plan' });
   }
 };
@@ -72,7 +73,7 @@ exports.updatePlan = async (req, res) => {
 
     res.json(plan);
   } catch (error) {
-    console.error('Error updating plan', error);
+    logger.error('Error updating plan', error);
     res.status(500).json({ message: 'Error al actualizar plan' });
   }
 };
@@ -87,7 +88,7 @@ exports.deletePlan = async (req, res) => {
     await plan.destroy();
     res.json({ message: 'Plan eliminado' });
   } catch (error) {
-    console.error('Error deleting plan', error);
+    logger.error('Error deleting plan', error);
     res.status(500).json({ message: 'Error al eliminar plan' });
   }
 };

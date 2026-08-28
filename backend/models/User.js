@@ -74,7 +74,11 @@ const User = sequelize.define('User', {
   }
 }, {
   tableName: 'users',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    // Consultas multi-tenant de usuarios por organización
+    { name: 'idx_users_org_id', fields: ['organizationId'] },
+  ]
 });
 
 User.beforeCreate(async (user) => {

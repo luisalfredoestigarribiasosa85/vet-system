@@ -1,6 +1,7 @@
 const Service = require('../models/Service');
 
 // Aislamiento multi-tenant: el organizationId proviene siempre del token
+const logger = require('../config/logger');
 const getOrgFilter = (req) => {
     const organizationId = req.user?.organizationId ?? null;
     return organizationId ? { organizationId } : {};
@@ -27,7 +28,7 @@ exports.getAllServices = async (req, res) => {
 
         res.json(services);
     } catch (error) {
-        console.error('Error al obtener servicios:', error);
+        logger.error('Error al obtener servicios:', error);
         res.status(500).json({ message: 'Error al obtener servicios' });
     }
 };
@@ -50,7 +51,7 @@ exports.getServiceById = async (req, res) => {
 
         res.json(service);
     } catch (error) {
-        console.error('Error al obtener servicio:', error);
+        logger.error('Error al obtener servicio:', error);
         res.status(500).json({ message: 'Error al obtener servicio' });
     }
 };
@@ -86,7 +87,7 @@ exports.createService = async (req, res) => {
 
         res.status(201).json(service);
     } catch (error) {
-        console.error('Error al crear servicio:', error);
+        logger.error('Error al crear servicio:', error);
         res.status(500).json({ message: 'Error al crear servicio' });
     }
 };
@@ -120,7 +121,7 @@ exports.updateService = async (req, res) => {
 
         res.json(service);
     } catch (error) {
-        console.error('Error al actualizar servicio:', error);
+        logger.error('Error al actualizar servicio:', error);
         res.status(500).json({ message: 'Error al actualizar servicio' });
     }
 };
@@ -146,7 +147,7 @@ exports.deleteService = async (req, res) => {
 
         res.json({ message: 'Servicio desactivado exitosamente' });
     } catch (error) {
-        console.error('Error al eliminar servicio:', error);
+        logger.error('Error al eliminar servicio:', error);
         res.status(500).json({ message: 'Error al eliminar servicio' });
     }
 };
@@ -167,7 +168,7 @@ exports.getServicesByCategory = async (req, res) => {
 
         res.json(services);
     } catch (error) {
-        console.error('Error al obtener servicios por categoría:', error);
+        logger.error('Error al obtener servicios por categoría:', error);
         res.status(500).json({ message: 'Error al obtener servicios por categoría' });
     }
 };

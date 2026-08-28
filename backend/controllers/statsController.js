@@ -1,3 +1,4 @@
+const logger = require('../config/logger');
 const { Appointment, Invoice, Vaccination, Inventory, Pet, Client } = require('../models');
 const { Op } = require('sequelize');
 const { sequelize } = require('../config/database');
@@ -35,7 +36,7 @@ const getAppointmentStats = async (req, res) => {
 
         res.json(appointments);
     } catch (error) {
-        console.error('Error al obtener estadísticas de citas:', error);
+        logger.error('Error al obtener estadísticas de citas:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -67,7 +68,7 @@ const getRevenueStats = async (req, res) => {
 
         res.json(revenue);
     } catch (error) {
-        console.error('Error al obtener estadísticas de ingresos:', error);
+        logger.error('Error al obtener estadísticas de ingresos:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -89,7 +90,7 @@ const getVaccinationStats = async (req, res) => {
 
         res.json(stats);
     } catch (error) {
-        console.error('Error al obtener estadísticas de vacunaciones:', error);
+        logger.error('Error al obtener estadísticas de vacunaciones:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -112,7 +113,7 @@ const getInventoryStats = async (req, res) => {
 
         res.json(lowStock);
     } catch (error) {
-        console.error('Error al obtener estadísticas de inventario:', error);
+        logger.error('Error al obtener estadísticas de inventario:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -182,7 +183,7 @@ const getOverviewStats = async (req, res) => {
             lowStockCount,
         });
     } catch (error) {
-        console.error('Error al obtener resumen general:', error);
+        logger.error('Error al obtener resumen general:', error);
         res.status(500).json({ message: error.message });
     }
 };

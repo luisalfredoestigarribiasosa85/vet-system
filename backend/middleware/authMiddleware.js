@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 // Middleware para proteger rutas (verificar token JWT)
+const logger = require('../config/logger');
 const protect = async (req, res, next) => {
   let token;
 
@@ -32,7 +33,7 @@ const protect = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(401).json({ message: 'Token no válido' });
   }
 };

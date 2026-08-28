@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Aislamiento multi-tenant: el organizationId proviene siempre del token
+const logger = require('../config/logger');
 const getOrgFilter = (req) => {
     const organizationId = req.user?.organizationId ?? null;
     return organizationId ? { organizationId } : {};
@@ -31,7 +32,7 @@ exports.getPetRecords = async (req, res) => {
         });
         res.json(records);
     } catch (error) {
-        console.error(error);
+        logger.error(error);
         res.status(500).json({ message: 'Error al obtener registros médicos' });
     }
 };
@@ -62,7 +63,7 @@ exports.createRecord = async (req, res) => {
         });
         res.status(201).json(record);
     } catch (error) {
-        console.error('Error al crear registro médico:', error);
+        logger.error('Error al crear registro médico:', error);
         res.status(500).json({
             message: 'Error al crear registro médico',
             error: error.message
@@ -118,7 +119,7 @@ exports.uploadImage = async (req, res) => {
             record
         });
     } catch (error) {
-        console.error(error);
+        logger.error(error);
         // Eliminar archivo si hubo error
         if (req.file) {
             fs.unlinkSync(req.file.path);
@@ -167,7 +168,7 @@ exports.deleteAttachment = async (req, res) => {
 
         res.json({ message: 'Archivo eliminado exitosamente' });
     } catch (error) {
-        console.error(error);
+        logger.error(error);
         res.status(500).json({ message: 'Error al eliminar archivo' });
     }
 };
@@ -202,7 +203,7 @@ exports.getRecordById = async (req, res) => {
 
         res.json(record);
     } catch (error) {
-        console.error(error);
+        logger.error(error);
         res.status(500).json({ message: 'Error al obtener registro médico' });
     }
 };
@@ -283,7 +284,7 @@ exports.generatePrescriptionPDF = async (req, res) => {
 
         doc.end();
     } catch (error) {
-        console.error('Error al generar PDF:', error);
+        logger.error('Error al generar PDF:', error);
         if (!res.headersSent) {
             res.status(500).json({ message: 'Error al generar PDF de receta' });
         }
@@ -297,6 +298,7 @@ exports.getDashboardStats = async (req, res) => {
     try {
         const { Op } = require('sequelize');
         const Client = require('../models/Client');
+        const Vaccination = require('../models/Vaccination');
 
         // Filtro multi-tenant para todas las consultas de este dashboard
         const orgFilter = getOrgFilter(req);
@@ -316,6 +318,16 @@ exports.getDashboardStats = async (req, res) => {
                 ...orgFilter,
                 createdAt: {
                     [Op.gte]: startOfMonth
+                }
+            }
+        });
+
+        // Vacunas aplicadas este mes (integración con el módulo de vacunas)
+        const vaccinationsThisMonth = await Vaccination.count({
+            where: {
+                ...orgFilter,
+                applicationDate: {
+                    [Op.gte]: startOfMonth.toISOString().slice(0, 10)
                 }
             }
         });
@@ -360,8 +372,35 @@ exports.getDashboardStats = async (req, res) => {
             monthlyCount[monthKey] = (monthlyCount[monthKey] || 0) + 1;
         });
 
-        const monthlyTrends = Object.entries(monthlyCount)
-            .map(([month, count]) => ({ month, count }))
+        // Vacunas aplicadas por mes (mismo rango de 6 meses)
+        const monthlyVaccinations = await Vaccination.findAll({
+            where: {
+                ...orgFilter,
+                applicationDate: {
+                    [Op.gte]: sixMonthsAgo.toISOString().slice(0, 10)
+                }
+            },
+            attributes: ['applicationDate'],
+            raw: true
+        });
+
+        const vaccineCount = {};
+        monthlyVaccinations.forEach(record => {
+            const monthKey = String(record.applicationDate).slice(0, 7);
+            vaccineCount[monthKey] = (vaccineCount[monthKey] || 0) + 1;
+        });
+
+        const allMonths = new Set([
+            ...Object.keys(monthlyCount),
+            ...Object.keys(vaccineCount)
+        ]);
+
+        const monthlyTrends = Array.from(allMonths)
+            .map(month => ({
+                month,
+                count: monthlyCount[month] || 0,
+                vaccines: vaccineCount[month] || 0
+            }))
             .sort((a, b) => a.month.localeCompare(b.month));
 
         // 5. Registros recientes (últimos 10)
@@ -414,13 +453,14 @@ exports.getDashboardStats = async (req, res) => {
         res.json({
             totalRecords,
             recordsThisMonth,
+            vaccinationsThisMonth,
             commonDiagnoses,
             monthlyTrends,
             recentRecords,
             recordsBySpecies
         });
     } catch (error) {
-        console.error('Error al obtener estadísticas del dashboard:', error);
+        logger.error('Error al obtener estadísticas del dashboard:', error);
         res.status(500).json({ message: 'Error al obtener estadísticas del dashboard' });
     }
 };

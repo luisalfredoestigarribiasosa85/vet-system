@@ -10,6 +10,7 @@
 
 // Detecta claves peligrosas: operadores de MongoDB ($gt, $ne, $where, ...)
 // y rutas de prototipo anidadas (constructor.prototype / "..")
+const logger = require('../config/logger');
 const DANGEROUS_KEY = /^\$/;
 
 const isDangerousKey = (key) => DANGEROUS_KEY.test(key) || key === '__proto__' || key === 'constructor' || key.includes('..');
@@ -74,7 +75,7 @@ const sanitizeBodyAndParams = (req, res, next) => {
         }
         next();
     } catch (error) {
-        console.error('Error en sanitización de inputs:', error);
+        logger.error('Error en sanitización de inputs:', error);
         next();
     }
 };

@@ -5,6 +5,7 @@ import {
   FileText,
   Calendar,
   PawPrint,
+  Syringe,
   User
 } from 'lucide-react';
 import {
@@ -68,7 +69,8 @@ const Medical = () => {
   const monthlyTrends = Array.isArray(stats?.monthlyTrends) ? stats.monthlyTrends : [];
   const trendData = monthlyTrends.map(item => ({
     name: monthNames[parseInt(item.month.split('-')[1]) - 1],
-    consultas: item.count
+    consultas: item.count,
+    vacunas: item.vaccines ?? 0
   }));
 
   return (
@@ -80,7 +82,7 @@ const Medical = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -130,6 +132,19 @@ const Medical = () => {
             </div>
           </div>
         </div>
+
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-emerald-100 text-sm font-medium">Vacunas</p>
+              <p className="text-3xl font-bold mt-2">{stats?.vaccinationsThisMonth ?? 0}</p>
+              <p className="text-emerald-100 text-xs mt-1">este mes</p>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg p-3">
+              <Syringe size={28} />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Charts Row */}
@@ -150,6 +165,14 @@ const Medical = () => {
                 stroke="#2563eb"
                 strokeWidth={2}
                 dot={{ fill: '#2563eb', r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="vacunas"
+                stroke="#059669"
+                strokeWidth={2}
+                dot={{ fill: '#059669', r: 4 }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>

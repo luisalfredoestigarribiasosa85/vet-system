@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
+const logger = require('../config/logger');
 const { User, Client } = require('../models');
 
 const signToken = (user) => jwt.sign(
@@ -44,7 +45,7 @@ exports.login = async (req, res) => {
       user: sanitizeUser(user),
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error del servidor' });
   }
 };
@@ -83,7 +84,7 @@ exports.register = async (req, res) => {
 
     res.status(201).json({ message: 'Usuario creado exitosamente' });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error del servidor' });
   }
 };
@@ -107,7 +108,7 @@ exports.me = async (req, res) => {
       client: user.client ? { id: user.client.id, name: user.client.name } : null,
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: 'Error del servidor' });
   }
 };

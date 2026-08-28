@@ -1,3 +1,4 @@
+const logger = require('../config/logger');
 const { Plan, Subscription, Organization } = require('../models');
 const PaymentProviderFactory = require('../services/paymentProviders');
 
@@ -13,7 +14,7 @@ exports.getPlans = async (req, res) => {
 
         res.json(plans);
     } catch (error) {
-        console.error('Error al obtener planes:', error);
+        logger.error('Error al obtener planes:', error);
         res.status(500).json({ message: 'Error al obtener planes' });
     }
 };
@@ -33,7 +34,7 @@ exports.getPlanById = async (req, res) => {
 
         res.json(plan);
     } catch (error) {
-        console.error('Error al obtener plan:', error);
+        logger.error('Error al obtener plan:', error);
         res.status(500).json({ message: 'Error al obtener plan' });
     }
 };
@@ -101,7 +102,7 @@ exports.createCheckoutSession = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al crear sesión de checkout:', error);
+        logger.error('Error al crear sesión de checkout:', error);
         res.status(500).json({
             message: 'Error al crear sesión de pago',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -136,7 +137,7 @@ exports.handleWebhook = async (req, res) => {
             const payload = Buffer.isBuffer(req.body) ? req.body.toString() : JSON.stringify(req.body);
             event = await paymentProvider.verifyWebhook(payload, signature);
         } catch (err) {
-            console.error('Webhook signature verification failed:', err.message);
+            logger.error('Webhook signature verification failed:', err.message);
             return res.status(400).send(`Webhook Error: ${err.message}`);
         }
 
@@ -148,14 +149,14 @@ exports.handleWebhook = async (req, res) => {
         } else if (providerName === 'pagopar') {
             await handlePagoParWebhook(event);
         } else {
-            console.log(`Proveedor ${providerName} no tiene handler específico, usando genérico`);
+            logger.info(`Proveedor ${providerName} no tiene handler específico, usando genérico`);
             await handleGenericWebhook(event);
         }
 
         res.json({ received: true });
 
     } catch (error) {
-        console.error('Error en webhook:', error);
+        logger.error('Error en webhook:', error);
         res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
@@ -181,7 +182,7 @@ async function handleStripeWebhook(event) {
             await handleSubscriptionDeleted(event.data);
             break;
         default:
-            console.log(`Unhandled Stripe event type: ${event.type}`);
+            logger.info(`Unhandled Stripe event type: ${event.type}`);
     }
 }
 
@@ -205,7 +206,7 @@ async function handlePayUWebhook(event) {
             await handlePayUExpired(event.data);
             break;
         default:
-            console.log(`Unhandled PayU event type: ${eventType}`);
+            logger.info(`Unhandled PayU event type: ${eventType}`);
     }
 }
 
@@ -239,7 +240,7 @@ async function handlePagoParWebhook(event) {
             await handlePagoParExpired(event.data);
             break;
         default:
-            console.log(`Unhandled PagoPar event type: ${eventType}`);
+            logger.info(`Unhandled PagoPar event type: ${eventType}`);
     }
 }
 
@@ -247,7 +248,7 @@ async function handlePagoParWebhook(event) {
  * Manejar webhook genérico
  */
 async function handleGenericWebhook(event) {
-    console.log('Generic webhook handler:', event);
+    logger.info('Generic webhook handler:', event);
     // Implementar lógica genérica si es necesario
 }
 
@@ -261,7 +262,7 @@ async function handleCheckoutCompleted(session) {
         const planId = metadata.planId || session.planId;
 
         if (!organizationId || !planId) {
-            console.error('Faltan organizationId o planId en el webhook');
+            logger.error('Faltan organizationId o planId en el webhook');
             return;
         }
 
@@ -301,10 +302,10 @@ async function handleCheckoutCompleted(session) {
             await Subscription.create(subscriptionData);
         }
 
-        console.log(`Suscripción activada para organización ${organizationId}`);
+        logger.info(`Suscripción activada para organización ${organizationId}`);
 
     } catch (error) {
-        console.error('Error al manejar checkout completado:', error);
+        logger.error('Error al manejar checkout completado:', error);
     }
 }
 
@@ -330,10 +331,10 @@ async function handlePayUApproved(data) {
                 currentPeriodStart: new Date(),
                 currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
             });
-            console.log(`Pago PayU aprobado para suscripción ${subscription.id}`);
+            logger.info(`Pago PayU aprobado para suscripción ${subscription.id}`);
         }
     } catch (error) {
-        console.error('Error al manejar pago aprobado de PayU:', error);
+        logger.error('Error al manejar pago aprobado de PayU:', error);
     }
 }
 
@@ -352,10 +353,10 @@ async function handlePayUDeclined(data) {
             await subscription.update({
                 status: 'past_due'
             });
-            console.log(`Pago PayU rechazado para suscripción ${subscription.id}`);
+            logger.info(`Pago PayU rechazado para suscripción ${subscription.id}`);
         }
     } catch (error) {
-        console.error('Error al manejar pago rechazado de PayU:', error);
+        logger.error('Error al manejar pago rechazado de PayU:', error);
     }
 }
 
@@ -374,10 +375,10 @@ async function handlePayUExpired(data) {
             await subscription.update({
                 status: 'incomplete_expired'
             });
-            console.log(`Pago PayU expirado para suscripción ${subscription.id}`);
+            logger.info(`Pago PayU expirado para suscripción ${subscription.id}`);
         }
     } catch (error) {
-        console.error('Error al manejar pago expirado de PayU:', error);
+        logger.error('Error al manejar pago expirado de PayU:', error);
     }
 }
 
@@ -414,11 +415,11 @@ async function handlePagoParApproved(data) {
                     currentPeriodStart: new Date(),
                     currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
                 });
-                console.log(`Pago PagoPar aprobado para suscripción ${subscription.id}`);
+                logger.info(`Pago PagoPar aprobado para suscripción ${subscription.id}`);
             }
         }
     } catch (error) {
-        console.error('Error al manejar pago aprobado de PagoPar:', error);
+        logger.error('Error al manejar pago aprobado de PagoPar:', error);
     }
 }
 
@@ -438,10 +439,10 @@ async function handlePagoParRejected(data) {
             await subscription.update({
                 status: 'past_due'
             });
-            console.log(`Pago PagoPar rechazado para suscripción ${subscription.id}`);
+            logger.info(`Pago PagoPar rechazado para suscripción ${subscription.id}`);
         }
     } catch (error) {
-        console.error('Error al manejar pago rechazado de PagoPar:', error);
+        logger.error('Error al manejar pago rechazado de PagoPar:', error);
     }
 }
 
@@ -461,10 +462,10 @@ async function handlePagoParPending(data) {
             await subscription.update({
                 status: 'incomplete'
             });
-            console.log(`Pago PagoPar pendiente para suscripción ${subscription.id}`);
+            logger.info(`Pago PagoPar pendiente para suscripción ${subscription.id}`);
         }
     } catch (error) {
-        console.error('Error al manejar pago pendiente de PagoPar:', error);
+        logger.error('Error al manejar pago pendiente de PagoPar:', error);
     }
 }
 
@@ -485,10 +486,10 @@ async function handlePagoParCancelled(data) {
                 canceledAt: new Date(),
                 cancelAtPeriodEnd: false
             });
-            console.log(`Suscripción PagoPar cancelada: ${subscription.id}`);
+            logger.info(`Suscripción PagoPar cancelada: ${subscription.id}`);
         }
     } catch (error) {
-        console.error('Error al manejar cancelación de PagoPar:', error);
+        logger.error('Error al manejar cancelación de PagoPar:', error);
     }
 }
 
@@ -508,10 +509,10 @@ async function handlePagoParExpired(data) {
             await subscription.update({
                 status: 'incomplete_expired'
             });
-            console.log(`Pago PagoPar expirado para suscripción ${subscription.id}`);
+            logger.info(`Pago PagoPar expirado para suscripción ${subscription.id}`);
         }
     } catch (error) {
-        console.error('Error al manejar pago expirado de PagoPar:', error);
+        logger.error('Error al manejar pago expirado de PagoPar:', error);
     }
 }
 
@@ -535,11 +536,11 @@ async function handleInvoicePaymentSucceeded(invoice) {
                 status: 'active'
             });
 
-            console.log(`Pago exitoso para suscripción ${subscription.id}`);
+            logger.info(`Pago exitoso para suscripción ${subscription.id}`);
         }
 
     } catch (error) {
-        console.error('Error al manejar pago de factura:', error);
+        logger.error('Error al manejar pago de factura:', error);
     }
 }
 
@@ -560,11 +561,11 @@ async function handleInvoicePaymentFailed(invoice) {
                 status: 'past_due'
             });
 
-            console.log(`Pago fallido para suscripción ${subscription.id}`);
+            logger.info(`Pago fallido para suscripción ${subscription.id}`);
         }
 
     } catch (error) {
-        console.error('Error al manejar pago fallido:', error);
+        logger.error('Error al manejar pago fallido:', error);
     }
 }
 
@@ -588,11 +589,11 @@ async function handleSubscriptionUpdated(subscriptionData) {
                 cancelAtPeriodEnd: subscriptionData.cancel_at_period_end
             });
 
-            console.log(`Suscripción actualizada: ${subscription.id}`);
+            logger.info(`Suscripción actualizada: ${subscription.id}`);
         }
 
     } catch (error) {
-        console.error('Error al manejar actualización de suscripción:', error);
+        logger.error('Error al manejar actualización de suscripción:', error);
     }
 }
 
@@ -615,11 +616,11 @@ async function handleSubscriptionDeleted(subscriptionData) {
                 cancelAtPeriodEnd: false
             });
 
-            console.log(`Suscripción cancelada: ${subscription.id}`);
+            logger.info(`Suscripción cancelada: ${subscription.id}`);
         }
 
     } catch (error) {
-        console.error('Error al manejar eliminación de suscripción:', error);
+        logger.error('Error al manejar eliminación de suscripción:', error);
     }
 }
 
@@ -660,7 +661,7 @@ exports.cancelSubscription = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al cancelar suscripción:', error);
+        logger.error('Error al cancelar suscripción:', error);
         res.status(500).json({ message: 'Error al cancelar suscripción' });
     }
 };
@@ -697,7 +698,7 @@ exports.reactivateSubscription = async (req, res) => {
         res.json({ message: 'Suscripción reactivada exitosamente' });
 
     } catch (error) {
-        console.error('Error al reactivar suscripción:', error);
+        logger.error('Error al reactivar suscripción:', error);
         res.status(500).json({ message: 'Error al reactivar suscripción' });
     }
 };
