@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 const CreateInvoiceModal = ({ isOpen, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(false);
@@ -222,11 +223,9 @@ const CreateInvoiceModal = ({ isOpen, onClose, onSuccess }) => {
                                 <p className="text-sm text-yellow-800">
                                     <strong>No hay servicios disponibles.</strong>
                                     <br />
-                                    Registra el catálogo de servicios desde el backend con:
-                                    <br />
-                                    <code className="bg-yellow-100 px-2 py-1 rounded mt-2 inline-block">
-                                        pnpm run seed:services
-                                    </code>
+                                    Agrega servicios desde la{' '}
+                                    <Link to="/services" className="underline font-semibold">página de Servicios</Link>
+                                    , o ejecuta <code className="bg-yellow-100 px-1 rounded">pnpm run seed:services</code> en el backend.
                                 </p>
                             </div>
                         ) : (

@@ -21,6 +21,7 @@ const MedicalHistory = lazy(() => import('./pages/MedicalHistory'));
 const Vaccinations = lazy(() => import('./pages/Vaccinations'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Subscription = lazy(() => import('./pages/Subscription'));
+const Services = lazy(() => import('./pages/Services'));
 
 // Portal
 const PortalLogin = lazy(() => import('./pages/portal/PortalLogin'));
@@ -74,6 +75,7 @@ function App() {
           <Route path="appointments" element={<Appointments />} />
           <Route path="medical" element={<Medical />} />
           <Route path="inventory" element={<Inventory />} />
+          <Route path="services" element={<Services />} />
           <Route path="invoices" element={<Invoices />} />
           <Route path="plans" element={<Plans />} />
           <Route path="payments" element={<Payments />} />

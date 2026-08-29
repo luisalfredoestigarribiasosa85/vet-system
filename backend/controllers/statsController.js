@@ -127,13 +127,14 @@ const getOverviewStats = async (req, res) => {
         const now = new Date();
         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        // Citas del mes
+        // Citas del mes — mismos criterios que la agenda (activas, no canceladas)
         const appointmentsThisMonth = await Appointment.count({
             where: {
                 ...orgFilter,
                 date: {
                     [Op.gte]: firstDayOfMonth,
                 },
+                isActive: true,
             },
         });
 

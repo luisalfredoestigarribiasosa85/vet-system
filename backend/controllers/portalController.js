@@ -301,6 +301,7 @@ exports.createAppointment = async (req, res) => {
       petId,
       startDateTime: slot.startDateTime,
       endDateTime: slot.endDateTime,
+      organizationId: client.organizationId,
     });
 
     const appointment = await Appointment.create({
@@ -317,6 +318,8 @@ exports.createAppointment = async (req, res) => {
       reminderMethod: 'email',
       startDateTime: slot.startDateTime,
       endDateTime: slot.endDateTime,
+      // La cita hereda la organización del cliente del portal (si no, sería invisible para la clínica)
+      organizationId: client.organizationId,
     });
 
     const result = await Appointment.findByPk(appointment.id, {
@@ -395,6 +398,7 @@ exports.updateAppointment = async (req, res) => {
       startDateTime: slot.startDateTime,
       endDateTime: slot.endDateTime,
       excludeId: appointment.id,
+      organizationId: client.organizationId,
     });
 
     await appointment.update({
